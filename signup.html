@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign Up | CHRIS HRIS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body onload="ensureLoggedOut()">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="index.html">CHRIS HRIS Portal</a>
+      <div class="nav-actions">
+        <a class="btn btn-outline" href="login.html">Login</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="page-wrap auth-layout">
+    <section class="auth-card">
+      <h2>Create Account</h2>
+      <p>Set up your account to start using CHRIS HRIS tools.</p>
+      <form class="form" onsubmit="event.preventDefault(); signup();">
+        <div>
+          <label for="signupName">Full Name</label>
+          <input id="signupName" type="text" required>
+        </div>
+        <div>
+          <label for="signupEmail">Email</label>
+          <input id="signupEmail" type="email" required>
+        </div>
+        <div>
+          <label for="signupPassword">Password</label>
+          <input id="signupPassword" type="password" minlength="6" required>
+        </div>
+        <p class="form-note">Use at least 6 characters for better account safety.</p>
+        <button class="btn btn-primary" type="submit">Sign Up</button>
+      </form>
+      <div id="authMessage" class="message"></div>
+      <div class="inline-links">
+        <a class="btn btn-outline" href="login.html">Already have an account?</a>
+      </div>
+    </section>
+  </main>
+
+<script src="auth.js"></script>
+</body>
+</html>

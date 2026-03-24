@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login | CHRIS HRIS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body onload="ensureLoggedOut()">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="index.html">CHRIS HRIS Portal</a>
+      <div class="nav-actions">
+        <a class="btn btn-outline" href="signup.html">Sign Up</a>
+        <a class="btn btn-outline" href="admin.html">Admin</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="page-wrap auth-layout">
+    <section class="auth-card">
+      <h2>Welcome Back</h2>
+      <p>Login to access your leave and training dashboard.</p>
+      <form class="form" onsubmit="event.preventDefault(); login();">
+        <div>
+          <label for="loginEmail">Email</label>
+          <input id="loginEmail" type="email" required>
+        </div>
+        <div>
+          <label for="loginPassword">Password</label>
+          <input id="loginPassword" type="password" required>
+        </div>
+        <button class="btn btn-primary" type="submit">Login</button>
+      </form>
+      <div id="authMessage" class="message"></div>
+      <div class="inline-links">
+        <a class="btn btn-outline" href="signup.html">Need an account?</a>
+        <a class="btn btn-outline" href="admin.html">Open admin page</a>
+      </div>
+    </section>
+  </main>
+
+<script src="auth.js"></script>
+</body>
+</html>

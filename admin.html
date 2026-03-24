@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Portal | CHRIS HRIS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body onload="initializeAdminPortal()">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="index.html">CHRIS HRIS Admin</a>
+      <div class="nav-actions">
+        <a class="btn btn-outline" href="login.html">Employee Login</a>
+        <button id="adminLogoutBtn" class="btn btn-danger hidden" onclick="adminLogout()">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page-wrap">
+    <section id="adminLoginSection" class="auth-layout">
+      <div class="auth-card">
+        <h2>Admin Login</h2>
+        <p>Use admin credentials to manage employee data.</p>
+        <form class="form" onsubmit="event.preventDefault(); adminLogin();">
+          <div>
+            <label for="adminEmail">Admin Email</label>
+            <input id="adminEmail" type="email" placeholder="admin@chris.local" required>
+          </div>
+          <div>
+            <label for="adminPassword">Password</label>
+            <input id="adminPassword" type="password" placeholder="admin123" required>
+          </div>
+          <button class="btn btn-primary" type="submit">Login as Admin</button>
+        </form>
+        <p class="form-note">Default demo credentials: admin@chris.local / admin123</p>
+        <div id="adminAuthMessage" class="message"></div>
+      </div>
+    </section>
+
+    <section id="adminPanelSection" class="hidden">
+      <div class="admin-grid">
+        <aside class="auth-card admin-sidebar">
+          <h3>Employees</h3>
+          <p class="form-note">Select an employee to manage records.</p>
+          <select id="employeeSelect" onchange="selectEmployee()"></select>
+          <div class="user-box" style="margin-top:10px">
+            Current Employee:<br>
+            <strong id="selectedEmployeeText">None</strong>
+          </div>
+        </aside>
+
+        <div>
+          <div class="card">
+            <h3>Leave Requests</h3>
+            <div class="table-wrap">
+              <table id="adminLeaveTable">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Days</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Evaluation Status</h3>
+            <div>
+              <label for="adminEvaluationStatus">Employee Rating</label>
+              <select id="adminEvaluationStatus">
+                <option>Very Good</option>
+                <option>Good</option>
+                <option>Bad</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" onclick="saveEmployeeEvaluation()">Save Rating</button>
+          </div>
+
+          <div class="card">
+            <h3>Attendance</h3>
+            <div class="grid-2">
+              <input id="adminAttendanceDate" type="date">
+              <div class="attendance-admin-picker">
+                <label><input type="radio" name="adminAttendanceStatus" value="Present" checked> Present</label>
+                <label><input type="radio" name="adminAttendanceStatus" value="Late"> Late</label>
+                <label><input type="radio" name="adminAttendanceStatus" value="Absent"> Absent</label>
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="addEmployeeAttendance()">Add Attendance</button>
+            <div class="table-wrap" style="margin-top:10px">
+              <table id="adminAttendanceTable">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Announcement Board</h3>
+            <input id="adminAnnouncementInput" placeholder="Post a company announcement...">
+            <button class="btn btn-primary" onclick="addGlobalAnnouncement()">Post Announcement</button>
+            <div id="adminAnnouncementBoard" class="announcement-board"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+<script src="admin.js"></script>
+</body>
+</html>
