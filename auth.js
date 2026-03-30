@@ -32,11 +32,6 @@ function showMessage(id, text, ok) {
 }
 
 function ensureLoggedOut() {
-  if (hasAdminSession()) {
-    window.location.href = 'admin.html';
-    return;
-  }
-
   const sessionEmail = getSession();
   if (sessionEmail) {
     window.location.href = 'dashboard.html';
@@ -47,8 +42,9 @@ function signup() {
   const name = document.getElementById('signupName').value.trim();
   const email = document.getElementById('signupEmail').value.trim().toLowerCase();
   const password = document.getElementById('signupPassword').value;
+  const gender = document.getElementById('signupGender').value;
 
-  if (!name || !email || !password) {
+  if (!name || !email || !password || !gender) {
     showMessage('authMessage', 'Please complete all sign up fields.', false);
     return;
   }
@@ -64,7 +60,7 @@ function signup() {
     return;
   }
 
-  users.push({ name, email, password });
+  users.push({ name, email, password, gender });
   saveUsers(users);
   setSession(email);
   localStorage.setItem('chris_leaves_' + email, JSON.stringify([]));

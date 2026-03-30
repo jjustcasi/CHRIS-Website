@@ -48,6 +48,7 @@ function initializeSettings() {
   document.getElementById('fullName').value = currentUser.name || '';
   document.getElementById('email').value = currentUser.email || '';
   document.getElementById('department').value = currentUser.department || '';
+  document.getElementById('position').value = currentUser.position || 'CHR Employee';
   document.getElementById('phone').value = currentUser.phone || '';
 }
 
@@ -56,6 +57,7 @@ function saveSettings() {
 
   const fullName = document.getElementById('fullName').value.trim();
   const department = document.getElementById('department').value.trim();
+  const position = document.getElementById('position').value.trim();
   const phone = document.getElementById('phone').value.trim();
   const newPassword = document.getElementById('newPassword').value;
   const confirmPassword = document.getElementById('confirmPassword').value;
@@ -87,6 +89,7 @@ function saveSettings() {
     ...users[idx],
     name: fullName,
     department,
+    position: position || 'CHR Employee',
     phone,
     ...(newPassword ? { password: newPassword } : {})
   };

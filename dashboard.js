@@ -3,7 +3,10 @@ let trainings = [];
 let attendance = [];
 let announcements = [];
 let evaluation = { status: '' };
+let pdsData = {};
 let currentUser = null;
+let signaturePadCtx = null;
+let isSignatureDrawing = false;
 
 function getUsers() {
   return JSON.parse(localStorage.getItem('chris_users') || '[]');
@@ -27,6 +30,7 @@ function loadUserData() {
   attendance = JSON.parse(localStorage.getItem(userDataKey('attendance')) || '[]');
   announcements = JSON.parse(localStorage.getItem('chris_global_announcements') || '[]');
   evaluation = JSON.parse(localStorage.getItem(userDataKey('evaluation')) || '{"status":""}');
+  pdsData = JSON.parse(localStorage.getItem(userDataKey('pds')) || '{}');
 }
 
 function saveUserData() {
@@ -34,6 +38,7 @@ function saveUserData() {
   localStorage.setItem(userDataKey('trainings'), JSON.stringify(trainings));
   localStorage.setItem(userDataKey('attendance'), JSON.stringify(attendance));
   localStorage.setItem(userDataKey('evaluation'), JSON.stringify(evaluation));
+  localStorage.setItem(userDataKey('pds'), JSON.stringify(pdsData));
 }
 
 function requireLogin() {
@@ -48,21 +53,57 @@ function requireLogin() {
     window.location.href = 'login.html';
     return false;
   }
-  currentUser = { name: user.name, email: user.email };
+  currentUser = {
+    name: user.name,
+    email: user.email,
+    position: user.position || 'CHR Employee',
+    gender: user.gender || ''
+  };
   return true;
 }
 
 function initializeDashboard() {
   if (!requireLogin()) return;
   document.getElementById('userName').textContent = currentUser.name;
+  document.getElementById('welcomeName').textContent = currentUser.name;
+  document.getElementById('welcomePosition').textContent = currentUser.position;
   loadUserData();
   seedUserSideDefaults();
+  populateLeaveTypeDropdown();
   showPage('overview');
   renderLeaves();
   renderTraining();
   renderAttendance();
   renderAnnouncements();
   renderOverview();
+  loadPdsForm();
+}
+
+function populateLeaveTypeDropdown() {
+  const genderAppropriateLeaves = getGenderAppropriateLeaveTypes();
+  const dropdown = document.getElementById('leaveType');
+  
+  dropdown.innerHTML = '';
+  genderAppropriateLeaves.forEach(leaveType => {
+    const option = document.createElement('option');
+    option.value = leaveType;
+    option.textContent = leaveType;
+    dropdown.appendChild(option);
+  });
+
+  // Add change listener to toggle medical certificate field
+  dropdown.addEventListener('change', toggleMedicalCertField);
+  toggleMedicalCertField();
+}
+
+function toggleMedicalCertField() {
+  const leaveType = document.getElementById('leaveType').value;
+  const medCertContainer = document.getElementById('medicalCertContainer');
+  if (leaveType === 'Sick Leave') {
+    medCertContainer.style.display = 'block';
+  } else {
+    medCertContainer.style.display = 'none';
+  }
 }
 
 function logout() {
@@ -74,9 +115,609 @@ function showPage(page) {
   document.getElementById('overviewPage').classList.toggle('hidden', page !== 'overview');
   document.getElementById('leavePage').classList.toggle('hidden', page !== 'leave');
   document.getElementById('trainingPage').classList.toggle('hidden', page !== 'training');
+  document.getElementById('pdsPage').classList.toggle('hidden', page !== 'pds');
   document.getElementById('overviewBtn').classList.toggle('active', page === 'overview');
   document.getElementById('leaveBtn').classList.toggle('active', page === 'leave');
   document.getElementById('trainingBtn').classList.toggle('active', page === 'training');
+  document.getElementById('pdsBtn').classList.toggle('active', page === 'pds');
+}
+
+const pdsFieldIds = [
+  'pdsSurname',
+  'pdsFirstName',
+  'pdsMiddleName',
+  'pdsNameExtension',
+  'pdsDob',
+  'pdsPlaceOfBirth',
+  'pdsSexAtBirth',
+  'pdsCivilStatus',
+  'pdsCitizenship',
+  'pdsResidentialAddress',
+  'pdsPermanentAddress',
+  'pdsResidentialHouseLot',
+  'pdsResidentialStreet',
+  'pdsResidentialSubdivision',
+  'pdsResidentialBarangay',
+  'pdsResidentialCity',
+  'pdsResidentialProvince',
+  'pdsResidentialZip',
+  'pdsPermanentHouseLot',
+  'pdsPermanentStreet',
+  'pdsPermanentSubdivision',
+  'pdsPermanentBarangay',
+  'pdsPermanentCity',
+  'pdsPermanentProvince',
+  'pdsPermanentZip',
+  'pdsHeight',
+  'pdsWeight',
+  'pdsBloodType',
+  'pdsGsis',
+  'pdsPagibig',
+  'pdsPhilhealth',
+  'pdsPhilsys',
+  'pdsTin',
+  'pdsAgencyNo',
+  'pdsDualCitizenshipType',
+  'pdsDualCitizenshipCountry',
+  'pdsTelephone',
+  'pdsMobile',
+  'pdsEmail',
+  'pdsSpouseSurname',
+  'pdsSpouseFirstName',
+  'pdsSpouseMiddleName',
+  'pdsSpouseNameExtension',
+  'pdsSpouseOccupation',
+  'pdsSpouseEmployer',
+  'pdsSpouseBusinessAddress',
+  'pdsSpouseTelephone',
+  'pdsChild1Name',
+  'pdsChild1Dob',
+  'pdsChild2Name',
+  'pdsChild2Dob',
+  'pdsChild3Name',
+  'pdsChild3Dob',
+  'pdsChild4Name',
+  'pdsChild4Dob',
+  'pdsFatherSurname',
+  'pdsFatherFirstName',
+  'pdsFatherMiddleName',
+  'pdsFatherNameExtension',
+  'pdsMotherSurname',
+  'pdsMotherFirstName',
+  'pdsMotherMiddleName',
+  'pdsFatherName',
+  'pdsMotherName',
+  'pdsChildren',
+  'pdsElemSchool',
+  'pdsElemDegree',
+  'pdsElemUnits',
+  'pdsElemFrom',
+  'pdsElemTo',
+  'pdsElemGradYear',
+  'pdsElemHonors',
+  'pdsSecSchool',
+  'pdsSecDegree',
+  'pdsSecUnits',
+  'pdsSecFrom',
+  'pdsSecTo',
+  'pdsSecGradYear',
+  'pdsSecHonors',
+  'pdsVocSchool',
+  'pdsVocDegree',
+  'pdsVocUnits',
+  'pdsVocFrom',
+  'pdsVocTo',
+  'pdsVocGradYear',
+  'pdsVocHonors',
+  'pdsColSchool',
+  'pdsColDegree',
+  'pdsColUnits',
+  'pdsColFrom',
+  'pdsColTo',
+  'pdsColGradYear',
+  'pdsColHonors',
+  'pdsGradSchool',
+  'pdsGradDegree',
+  'pdsGradUnits',
+  'pdsGradFrom',
+  'pdsGradTo',
+  'pdsGradGradYear',
+  'pdsGradHonors',
+  'pdsCivilService',
+  'pdsWorkExperience',
+  'pdsVoluntaryWork',
+  'pdsLearningDevelopment',
+  'pdsSkills',
+  'pdsMembership'
+  ,
+  'pdsESignature',
+  'pdsSignatureDate'
+];
+
+function inferNameParts(name) {
+  const trimmed = (name || '').trim();
+  if (!trimmed) return { pdsSurname: '', pdsFirstName: '', pdsMiddleName: '' };
+
+  const parts = trimmed.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) {
+    return { pdsSurname: parts[0], pdsFirstName: '', pdsMiddleName: '' };
+  }
+  if (parts.length === 2) {
+    return { pdsSurname: parts[1], pdsFirstName: parts[0], pdsMiddleName: '' };
+  }
+
+  const firstName = parts[0];
+  const surname = parts[parts.length - 1];
+  const middleName = parts.slice(1, -1).join(' ');
+
+  return {
+    pdsSurname: surname,
+    pdsFirstName: firstName,
+    pdsMiddleName: middleName
+  };
+}
+
+function loadPdsForm() {
+  const defaults = {
+    pdsEmail: currentUser.email,
+    pdsSexAtBirth: currentUser.gender || '',
+    pdsSignatureDate: new Date().toISOString().slice(0, 10),
+    ...inferNameParts(currentUser.name)
+  };
+
+  pdsFieldIds.forEach(fieldId => {
+    const field = document.getElementById(fieldId);
+    if (!field) return;
+
+    const storedValue = pdsData[fieldId];
+    if (storedValue !== undefined && storedValue !== null) {
+      field.value = String(storedValue);
+      return;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(defaults, fieldId)) {
+      field.value = defaults[fieldId];
+    }
+  });
+
+  syncSexAtBirthCheckboxes();
+  syncCivilStatusCheckboxes();
+  syncCitizenshipOptions();
+  syncDualCitizenshipTypeCheckboxes();
+  hydrateStructuredAddressFields();
+  hydrateFamilyStructuredFields();
+  initializeSignaturePad();
+}
+
+function initializeSignaturePad() {
+  const canvas = document.getElementById('pdsSignaturePad');
+  const hiddenSignature = document.getElementById('pdsESignature');
+  if (!canvas || !hiddenSignature) return;
+
+  if (!signaturePadCtx) {
+    signaturePadCtx = canvas.getContext('2d');
+    signaturePadCtx.lineCap = 'round';
+    signaturePadCtx.lineJoin = 'round';
+    signaturePadCtx.strokeStyle = '#111827';
+    signaturePadCtx.lineWidth = 2;
+  }
+
+  if (!canvas.dataset.bound) {
+    canvas.addEventListener('pointerdown', startSignatureStroke);
+    canvas.addEventListener('pointermove', drawSignatureStroke);
+    canvas.addEventListener('pointerup', endSignatureStroke);
+    canvas.addEventListener('pointerleave', endSignatureStroke);
+    canvas.addEventListener('pointercancel', endSignatureStroke);
+    canvas.dataset.bound = 'true';
+  }
+
+  signaturePadCtx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (hiddenSignature.value) {
+    const image = new Image();
+    image.onload = () => {
+      signaturePadCtx.clearRect(0, 0, canvas.width, canvas.height);
+      signaturePadCtx.drawImage(image, 0, 0, canvas.width, canvas.height);
+    };
+    image.src = hiddenSignature.value;
+  }
+}
+
+function getSignaturePoint(event) {
+  const canvas = document.getElementById('pdsSignaturePad');
+  if (!canvas) return { x: 0, y: 0 };
+
+  const rect = canvas.getBoundingClientRect();
+  if (!rect.width || !rect.height) return { x: 0, y: 0 };
+
+  return {
+    x: (event.clientX - rect.left) * (canvas.width / rect.width),
+    y: (event.clientY - rect.top) * (canvas.height / rect.height)
+  };
+}
+
+function startSignatureStroke(event) {
+  if (!signaturePadCtx) return;
+  const canvas = document.getElementById('pdsSignaturePad');
+  if (!canvas) return;
+
+  isSignatureDrawing = true;
+  canvas.setPointerCapture(event.pointerId);
+  const point = getSignaturePoint(event);
+  signaturePadCtx.beginPath();
+  signaturePadCtx.moveTo(point.x, point.y);
+  event.preventDefault();
+}
+
+function drawSignatureStroke(event) {
+  if (!isSignatureDrawing || !signaturePadCtx) return;
+  const point = getSignaturePoint(event);
+  signaturePadCtx.lineTo(point.x, point.y);
+  signaturePadCtx.stroke();
+  event.preventDefault();
+}
+
+function endSignatureStroke(event) {
+  if (!isSignatureDrawing || !signaturePadCtx) return;
+  isSignatureDrawing = false;
+  signaturePadCtx.closePath();
+
+  const canvas = document.getElementById('pdsSignaturePad');
+  const hiddenSignature = document.getElementById('pdsESignature');
+  if (!canvas || !hiddenSignature) return;
+
+  hiddenSignature.value = canvas.toDataURL('image/png');
+  event.preventDefault();
+}
+
+function clearPdsSignature() {
+  const canvas = document.getElementById('pdsSignaturePad');
+  const hiddenSignature = document.getElementById('pdsESignature');
+  if (!canvas || !hiddenSignature || !signaturePadCtx) return;
+
+  signaturePadCtx.clearRect(0, 0, canvas.width, canvas.height);
+  hiddenSignature.value = '';
+}
+
+function setSexAtBirth(value, checked) {
+  const sexInput = document.getElementById('pdsSexAtBirth');
+  const maleCb = document.getElementById('pdsSexMale');
+  const femaleCb = document.getElementById('pdsSexFemale');
+  if (!sexInput || !maleCb || !femaleCb) return;
+
+  if (!checked) {
+    sexInput.value = '';
+    maleCb.checked = false;
+    femaleCb.checked = false;
+    return;
+  }
+
+  sexInput.value = value;
+  maleCb.checked = value === 'Male';
+  femaleCb.checked = value === 'Female';
+}
+
+function syncSexAtBirthCheckboxes() {
+  const sexInput = document.getElementById('pdsSexAtBirth');
+  const maleCb = document.getElementById('pdsSexMale');
+  const femaleCb = document.getElementById('pdsSexFemale');
+  if (!sexInput || !maleCb || !femaleCb) return;
+
+  maleCb.checked = sexInput.value === 'Male';
+  femaleCb.checked = sexInput.value === 'Female';
+}
+
+function setCivilStatus(value, checked) {
+  const civilInput = document.getElementById('pdsCivilStatus');
+  const single = document.getElementById('pdsCivilSingle');
+  const married = document.getElementById('pdsCivilMarried');
+  const widowed = document.getElementById('pdsCivilWidowed');
+  const separated = document.getElementById('pdsCivilSeparated');
+  const other = document.getElementById('pdsCivilOther');
+
+  if (!civilInput || !single || !married || !widowed || !separated || !other) return;
+
+  if (!checked) {
+    civilInput.value = '';
+    single.checked = false;
+    married.checked = false;
+    widowed.checked = false;
+    separated.checked = false;
+    other.checked = false;
+    return;
+  }
+
+  civilInput.value = value;
+  single.checked = value === 'Single';
+  married.checked = value === 'Married';
+  widowed.checked = value === 'Widowed';
+  separated.checked = value === 'Separated';
+  other.checked = value === 'Other';
+}
+
+function syncCivilStatusCheckboxes() {
+  const civilInput = document.getElementById('pdsCivilStatus');
+  const single = document.getElementById('pdsCivilSingle');
+  const married = document.getElementById('pdsCivilMarried');
+  const widowed = document.getElementById('pdsCivilWidowed');
+  const separated = document.getElementById('pdsCivilSeparated');
+  const other = document.getElementById('pdsCivilOther');
+
+  if (!civilInput || !single || !married || !widowed || !separated || !other) return;
+
+  single.checked = civilInput.value === 'Single';
+  married.checked = civilInput.value === 'Married';
+  widowed.checked = civilInput.value === 'Widowed';
+  separated.checked = civilInput.value === 'Separated';
+  other.checked = civilInput.value === 'Other';
+}
+
+function setCitizenshipOption(value, checked) {
+  const citizenshipInput = document.getElementById('pdsCitizenship');
+  const filipinoCb = document.getElementById('pdsCitizenshipFilipino');
+  const dualCb = document.getElementById('pdsCitizenshipDual');
+
+  if (!citizenshipInput || !filipinoCb || !dualCb) return;
+
+  if (!checked) {
+    citizenshipInput.value = '';
+    filipinoCb.checked = false;
+    dualCb.checked = false;
+    setDualCitizenshipType('', false);
+    return;
+  }
+
+  citizenshipInput.value = value;
+  filipinoCb.checked = value === 'Filipino';
+  dualCb.checked = value === 'Dual Citizenship';
+
+  if (value !== 'Dual Citizenship') {
+    setDualCitizenshipType('', false);
+  }
+}
+
+function syncCitizenshipOptions() {
+  const citizenshipInput = document.getElementById('pdsCitizenship');
+  const filipinoCb = document.getElementById('pdsCitizenshipFilipino');
+  const dualCb = document.getElementById('pdsCitizenshipDual');
+
+  if (!citizenshipInput || !filipinoCb || !dualCb) return;
+
+  filipinoCb.checked = citizenshipInput.value === 'Filipino';
+  dualCb.checked = citizenshipInput.value === 'Dual Citizenship';
+}
+
+function setDualCitizenshipType(value, checked) {
+  const dualTypeInput = document.getElementById('pdsDualCitizenshipType');
+  const byBirth = document.getElementById('pdsDualByBirth');
+  const byNaturalization = document.getElementById('pdsDualByNaturalization');
+
+  if (!dualTypeInput || !byBirth || !byNaturalization) return;
+
+  if (!checked) {
+    dualTypeInput.value = '';
+    byBirth.checked = false;
+    byNaturalization.checked = false;
+    return;
+  }
+
+  dualTypeInput.value = value;
+  byBirth.checked = value === 'By Birth';
+  byNaturalization.checked = value === 'By Naturalization';
+}
+
+function syncDualCitizenshipTypeCheckboxes() {
+  const dualTypeInput = document.getElementById('pdsDualCitizenshipType');
+  const byBirth = document.getElementById('pdsDualByBirth');
+  const byNaturalization = document.getElementById('pdsDualByNaturalization');
+
+  if (!dualTypeInput || !byBirth || !byNaturalization) return;
+
+  byBirth.checked = dualTypeInput.value === 'By Birth';
+  byNaturalization.checked = dualTypeInput.value === 'By Naturalization';
+}
+
+function getFieldValue(id) {
+  const field = document.getElementById(id);
+  return field ? (field.value || '').trim() : '';
+}
+
+function setFieldValue(id, value) {
+  const field = document.getElementById(id);
+  if (field) field.value = value || '';
+}
+
+function hydrateStructuredAddressFields() {
+  const residentialParts = [
+    getFieldValue('pdsResidentialHouseLot'),
+    getFieldValue('pdsResidentialStreet'),
+    getFieldValue('pdsResidentialSubdivision'),
+    getFieldValue('pdsResidentialBarangay'),
+    getFieldValue('pdsResidentialCity'),
+    getFieldValue('pdsResidentialProvince'),
+    getFieldValue('pdsResidentialZip')
+  ];
+  const permanentParts = [
+    getFieldValue('pdsPermanentHouseLot'),
+    getFieldValue('pdsPermanentStreet'),
+    getFieldValue('pdsPermanentSubdivision'),
+    getFieldValue('pdsPermanentBarangay'),
+    getFieldValue('pdsPermanentCity'),
+    getFieldValue('pdsPermanentProvince'),
+    getFieldValue('pdsPermanentZip')
+  ];
+
+  const legacyResidential = getFieldValue('pdsResidentialAddress');
+  const legacyPermanent = getFieldValue('pdsPermanentAddress');
+
+  if (!residentialParts.some(Boolean) && legacyResidential.includes('|')) {
+    const values = legacyResidential.split('|').map(item => item.trim());
+    setFieldValue('pdsResidentialHouseLot', values[0] || '');
+    setFieldValue('pdsResidentialStreet', values[1] || '');
+    setFieldValue('pdsResidentialSubdivision', values[2] || '');
+    setFieldValue('pdsResidentialBarangay', values[3] || '');
+    setFieldValue('pdsResidentialCity', values[4] || '');
+    setFieldValue('pdsResidentialProvince', values[5] || '');
+    setFieldValue('pdsResidentialZip', values[6] || '');
+  }
+
+  if (!permanentParts.some(Boolean) && legacyPermanent.includes('|')) {
+    const values = legacyPermanent.split('|').map(item => item.trim());
+    setFieldValue('pdsPermanentHouseLot', values[0] || '');
+    setFieldValue('pdsPermanentStreet', values[1] || '');
+    setFieldValue('pdsPermanentSubdivision', values[2] || '');
+    setFieldValue('pdsPermanentBarangay', values[3] || '');
+    setFieldValue('pdsPermanentCity', values[4] || '');
+    setFieldValue('pdsPermanentProvince', values[5] || '');
+    setFieldValue('pdsPermanentZip', values[6] || '');
+  }
+}
+
+function syncLegacyAddressFields() {
+  const residentialCombined = [
+    getFieldValue('pdsResidentialHouseLot'),
+    getFieldValue('pdsResidentialStreet'),
+    getFieldValue('pdsResidentialSubdivision'),
+    getFieldValue('pdsResidentialBarangay'),
+    getFieldValue('pdsResidentialCity'),
+    getFieldValue('pdsResidentialProvince'),
+    getFieldValue('pdsResidentialZip')
+  ].join(' | ');
+
+  const permanentCombined = [
+    getFieldValue('pdsPermanentHouseLot'),
+    getFieldValue('pdsPermanentStreet'),
+    getFieldValue('pdsPermanentSubdivision'),
+    getFieldValue('pdsPermanentBarangay'),
+    getFieldValue('pdsPermanentCity'),
+    getFieldValue('pdsPermanentProvince'),
+    getFieldValue('pdsPermanentZip')
+  ].join(' | ');
+
+  setFieldValue('pdsResidentialAddress', residentialCombined);
+  setFieldValue('pdsPermanentAddress', permanentCombined);
+}
+
+function hydrateFamilyStructuredFields() {
+  const hasChildrenRows = [
+    getFieldValue('pdsChild1Name'),
+    getFieldValue('pdsChild2Name'),
+    getFieldValue('pdsChild3Name'),
+    getFieldValue('pdsChild4Name')
+  ].some(Boolean);
+
+  const legacyChildren = getFieldValue('pdsChildren');
+  if (!hasChildrenRows && legacyChildren) {
+    const childLines = legacyChildren
+      .split(/\r?\n/)
+      .map(line => line.trim())
+      .filter(Boolean)
+      .slice(0, 4);
+
+    childLines.forEach((line, index) => {
+      const [namePart, dobPart] = line.split('|').map(item => (item || '').trim());
+      setFieldValue(`pdsChild${index + 1}Name`, namePart || line);
+      setFieldValue(`pdsChild${index + 1}Dob`, dobPart || '');
+    });
+  }
+
+  const hasFatherParts = [
+    getFieldValue('pdsFatherSurname'),
+    getFieldValue('pdsFatherFirstName'),
+    getFieldValue('pdsFatherMiddleName')
+  ].some(Boolean);
+  const legacyFather = getFieldValue('pdsFatherName');
+  if (!hasFatherParts && legacyFather) {
+    setFieldValue('pdsFatherSurname', legacyFather);
+  }
+
+  const hasMotherParts = [
+    getFieldValue('pdsMotherSurname'),
+    getFieldValue('pdsMotherFirstName'),
+    getFieldValue('pdsMotherMiddleName')
+  ].some(Boolean);
+  const legacyMother = getFieldValue('pdsMotherName');
+  if (!hasMotherParts && legacyMother) {
+    setFieldValue('pdsMotherSurname', legacyMother);
+  }
+}
+
+function syncLegacyFamilyFields() {
+  const childrenLines = [1, 2, 3, 4]
+    .map(index => {
+      const name = getFieldValue(`pdsChild${index}Name`);
+      const dob = getFieldValue(`pdsChild${index}Dob`);
+      if (!name && !dob) return '';
+      return dob ? `${name} | ${dob}` : name;
+    })
+    .filter(Boolean);
+
+  const fatherNameParts = [
+    getFieldValue('pdsFatherSurname'),
+    getFieldValue('pdsFatherFirstName'),
+    getFieldValue('pdsFatherMiddleName')
+  ].filter(Boolean);
+
+  const fatherExtension = getFieldValue('pdsFatherNameExtension');
+  const fatherJoined = fatherNameParts.join(', ').trim();
+  const fatherFull = fatherExtension ? `${fatherJoined} ${fatherExtension}`.trim() : fatherJoined;
+
+  const motherNameParts = [
+    getFieldValue('pdsMotherSurname'),
+    getFieldValue('pdsMotherFirstName'),
+    getFieldValue('pdsMotherMiddleName')
+  ].filter(Boolean);
+
+  setFieldValue('pdsChildren', childrenLines.join('\n'));
+  setFieldValue('pdsFatherName', fatherFull);
+  setFieldValue('pdsMotherName', motherNameParts.join(', ').trim());
+}
+
+function showPdsMessage(text, ok) {
+  const msg = document.getElementById('pdsMessage');
+  if (!msg) return;
+  msg.textContent = text || '';
+  msg.className = 'message';
+  if (!text) return;
+  msg.classList.add(ok ? 'ok' : 'err');
+}
+
+function savePds() {
+  if (!currentUser) return;
+
+  const surname = (document.getElementById('pdsSurname').value || '').trim();
+  const firstName = (document.getElementById('pdsFirstName').value || '').trim();
+  const mobile = (document.getElementById('pdsMobile').value || '').trim();
+
+  if (!surname || !firstName || !mobile) {
+    showPdsMessage('Please provide at least Surname, First Name, and Mobile Number.', false);
+    return;
+  }
+
+  const updated = {
+    ...pdsData,
+    updatedAt: new Date().toISOString()
+  };
+
+  syncLegacyAddressFields();
+  syncLegacyFamilyFields();
+
+  pdsFieldIds.forEach(fieldId => {
+    const field = document.getElementById(fieldId);
+    if (!field) return;
+    updated[fieldId] = field.value;
+  });
+
+  pdsData = updated;
+  saveUserData();
+  showPdsMessage('PDS saved successfully.', true);
+}
+
+function resetPdsForm() {
+  pdsData = {};
+  saveUserData();
+  loadPdsForm();
+  showPdsMessage('PDS form reset. Default account details were reloaded.', true);
 }
 
 function seedUserSideDefaults() {
@@ -110,20 +751,82 @@ function applyLeave() {
   const end = document.getElementById('endDate').value;
 
   if (!start || !end) return;
+  
+  // Check if medical certificate is required for sick leave
+  if (type === 'Sick Leave') {
+    const medCertFile = document.getElementById('medicalCert').files[0];
+    if (!medCertFile) {
+      showLeaveNotification('Medical certificate is required for Sick Leave.', 'error');
+      return;
+    }
+    
+    // Check file size (max 5MB)
+    if (medCertFile.size > 5 * 1024 * 1024) {
+      showLeaveNotification('Medical certificate file size must not exceed 5MB.', 'error');
+      return;
+    }
+  }
+
   const days = daysBetween(start, end);
   if (!days) return;
 
-  leaves.unshift({
+  // Create leave object
+  const leaveObj = {
     id: Date.now(),
     type,
     start,
     end,
     days,
-    status: 'Pending'
-  });
-  saveUserData();
-  renderLeaves();
-  renderOverview();
+    status: 'Pending',
+    medicalCertificate: null
+  };
+
+  // Handle medical certificate file
+  if (type === 'Sick Leave') {
+    const medCertFile = document.getElementById('medicalCert').files[0];
+    const reader = new FileReader();
+    
+    reader.onload = function(e) {
+      leaveObj.medicalCertificate = {
+        name: medCertFile.name,
+        type: medCertFile.type,
+        data: e.target.result // Base64 encoded file data
+      };
+      
+      leaves.unshift(leaveObj);
+      saveUserData();
+      renderLeaves();
+      renderOverview();
+      
+      // Show notification to user
+      showLeaveNotification(`Leave request submitted with medical certificate! Waiting for admin approval.`, 'success');
+      
+      // Clear form
+      document.getElementById('leaveType').value = '';
+      document.getElementById('startDate').value = '';
+      document.getElementById('endDate').value = '';
+      document.getElementById('medicalCert').value = '';
+      toggleMedicalCertField();
+      populateLeaveTypeDropdown();
+    };
+    
+    reader.readAsDataURL(medCertFile);
+  } else {
+    leaves.unshift(leaveObj);
+    saveUserData();
+    renderLeaves();
+    renderOverview();
+    
+    // Show notification to user
+    showLeaveNotification(`Leave request submitted! Waiting for admin approval.`, 'success');
+    
+    // Clear form
+    document.getElementById('leaveType').value = '';
+    document.getElementById('startDate').value = '';
+    document.getElementById('endDate').value = '';
+    toggleMedicalCertField();
+    populateLeaveTypeDropdown();
+  }
 }
 
 function updateLeave(id, status) {
@@ -139,6 +842,10 @@ function renderLeaves() {
 
   leaves.forEach(l => {
     const cssClass = l.status.toLowerCase();
+    const certButton = l.medicalCertificate 
+      ? `<button class="btn btn-outline" onclick="viewMedicalCertificate(${l.id})" style="padding: 6px 12px; font-size: 0.85rem; background: #e8f4f8; color: #0ea5e9;">View Cert</button>`
+      : (l.type === 'Sick Leave' ? '<span style="color: #999;">Pending</span>' : '<span style="color: #ccc;">N/A</span>');
+    
     const row = `
       <tr>
         <td>${l.type}</td>
@@ -146,10 +853,119 @@ function renderLeaves() {
         <td>${l.end}</td>
         <td>${l.days}</td>
         <td><span class="status ${cssClass}">${l.status}</span></td>
+        <td>${certButton}</td>
+        <td><button class="btn btn-outline" onclick="openEmployeeLeaveDetailsModal(${l.id})" style="padding: 6px 12px; font-size: 0.85rem;">View Details</button></td>
       </tr>`;
     tbody.innerHTML += row;
   });
 }
+
+// ============ Employee Leave Details Modal ============
+
+function openEmployeeLeaveDetailsModal(leaveId) {
+  const leave = leaves.find(l => l.id === leaveId);
+  if (!leave) return;
+
+  const modalContent = document.getElementById('employeeLeaveModalContent');
+  const cssClass = (leave.status || 'Pending').toLowerCase();
+  
+  modalContent.innerHTML = `
+    <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+      <p><strong>Leave Type:</strong> ${leave.type}</p>
+      <p><strong>Start Date:</strong> ${leave.start}</p>
+      <p><strong>End Date:</strong> ${leave.end}</p>
+      <p><strong>Number of Days:</strong> ${leave.days}</p>
+      <p><strong>Status:</strong> <span class="status ${cssClass}">${leave.status}</span></p>
+    </div>
+  `;
+
+  // Display admin comments
+  displayEmployeeComments(leaveId);
+
+  // Show modal
+  document.getElementById('leaveDetailsModalEmployee').style.display = 'block';
+}
+
+function closeEmployeeLeaveModal() {
+  document.getElementById('leaveDetailsModalEmployee').style.display = 'none';
+}
+
+function viewMedicalCertificate(leaveId) {
+  const leave = leaves.find(l => l.id === leaveId);
+  if (!leave || !leave.medicalCertificate) {
+    showLeaveNotification('Medical certificate not found.', 'error');
+    return;
+  }
+
+  const cert = leave.medicalCertificate;
+  const content = document.getElementById('medicalCertContent');
+  
+  // Check if it's an image
+  if (cert.type.startsWith('image/')) {
+    content.innerHTML = `<img src="${cert.data}" style="max-width: 100%; height: auto; border-radius: 8px;">`;
+  } else if (cert.type === 'application/pdf') {
+    content.innerHTML = `
+      <p style="margin-bottom: 15px; text-align: center;">
+        <strong>${cert.name}</strong>
+      </p>
+      <p style="color: #666; text-align: center;">PDF files are not displayed inline. Please download or contact admin to view.</p>
+      <div style="text-align: center; margin-top: 20px;">
+        <a href="${cert.data}" download="${cert.name}" class="btn btn-primary" style="text-decoration: none; display: inline-block; padding: 10px 20px;">Download PDF</a>
+      </div>
+    `;
+  } else {
+    content.innerHTML = `
+      <p><strong>File Name:</strong> ${cert.name}</p>
+      <p><strong>File Type:</strong> ${cert.type}</p>
+      <p style="color: #666; margin-top: 20px;">Document preview not available for this file type. Please contact admin to view the full document.</p>
+    `;
+  }
+  
+  document.getElementById('medicalCertModal').style.display = 'block';
+}
+
+function closeMedicalCertModal() {
+  document.getElementById('medicalCertModal').style.display = 'none';
+}
+
+function displayEmployeeComments(leaveId) {
+  const commentsList = document.getElementById('employeeCommentsList');
+  const key = `chris_comments_${currentUser.email}_${leaveId}`;
+  const comments = JSON.parse(localStorage.getItem(key) || '[]');
+
+  if (!comments.length) {
+    commentsList.innerHTML = '<p style="color: #999; margin: 0;">No admin comments yet. You\'ll be notified when admin adds notes.</p>';
+    return;
+  }
+
+  commentsList.innerHTML = '';
+  comments.forEach(comment => {
+    const commentEl = document.createElement('div');
+    commentEl.style.cssText = `
+      background: white;
+      padding: 10px;
+      margin-bottom: 8px;
+      border-radius: 6px;
+      border-left: 3px solid #0f766e;
+    `;
+    commentEl.innerHTML = `
+      <div>
+        <p style="font-weight: 600; margin: 0 0 4px 0; color: #333;">Admin Note</p>
+        <p style="margin: 0; color: #555; font-size: 0.9rem;">${comment.text}</p>
+        <p style="margin: 4px 0 0 0; color: #999; font-size: 0.8rem;">${comment.date}</p>
+      </div>
+    `;
+    commentsList.appendChild(commentEl);
+  });
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', function(event) {
+  const modal = document.getElementById('leaveDetailsModalEmployee');
+  if (event.target === modal) {
+    closeEmployeeLeaveModal();
+  }
+});
 
 function addTraining() {
   const title = document.getElementById('title').value.trim();
@@ -239,16 +1055,27 @@ function renderAnnouncements() {
 
 function renderOverview() {
   const leaveQuota = {
-    Sick: 10,
-    Emergency: 5,
-    Vacation: 15
+    'Vacation Leave': 5,
+    'Mandatory/Force Leave': 5,
+    'Sick Leave': 5,
+    'Maternity Leave': 105,
+    'Paternity Leave': 7,
+    'Special Privilege Leave': 3,
+    'Solo Parent Leave': 7,
+    '10-Day VAWC Leave': 10,
+    'Rehabilitation Privilege': 0,
+    'Special Leave Benefits for Women': 0,
+    'Special Emergency (Calamity) Leave': 5,
+    'Adoption Leave': 0,
+    'Wellness Leave': 0
   };
 
-  const requestedByType = {
-    Sick: 0,
-    Emergency: 0,
-    Vacation: 0
-  };
+  const requestedByType = {};
+  
+  // Initialize requestedByType with all leave types
+  Object.keys(leaveQuota).forEach(type => {
+    requestedByType[type] = 0;
+  });
 
   leaves
     .filter(l => l.status !== 'Rejected')
@@ -258,13 +1085,8 @@ function renderOverview() {
       }
     });
 
-  const sickBalance = Math.max(0, leaveQuota.Sick - requestedByType.Sick);
-  const emergencyBalance = Math.max(0, leaveQuota.Emergency - requestedByType.Emergency);
-  const vacationBalance = Math.max(0, leaveQuota.Vacation - requestedByType.Vacation);
-
-  const sickPercent = (sickBalance / leaveQuota.Sick) * 100;
-  const emergencyPercent = (emergencyBalance / leaveQuota.Emergency) * 100;
-  const vacationPercent = (vacationBalance / leaveQuota.Vacation) * 100;
+  // Render leave balance dynamically
+  renderLeaveBalance(leaveQuota, requestedByType);
 
   const today = new Date().toISOString().slice(0, 10);
   const upcoming = trainings
@@ -279,15 +1101,22 @@ function renderOverview() {
   const approvedLeaves = leaves.filter(l => l.status === 'Approved').length;
   const rejectedLeaves = leaves.filter(l => l.status === 'Rejected').length;
 
-  document.getElementById('sickLeaveBalance').textContent = String(sickBalance);
-  document.getElementById('emergencyLeaveBalance').textContent = String(emergencyBalance);
-  document.getElementById('vacationLeaveBalance').textContent = String(vacationBalance);
-  document.getElementById('sickLeaveMeta').textContent = sickBalance + ' / ' + leaveQuota.Sick + ' remaining';
-  document.getElementById('emergencyLeaveMeta').textContent = emergencyBalance + ' / ' + leaveQuota.Emergency + ' remaining';
-  document.getElementById('vacationLeaveMeta').textContent = vacationBalance + ' / ' + leaveQuota.Vacation + ' remaining';
-  document.getElementById('sickLeaveBar').style.width = sickPercent + '%';
-  document.getElementById('emergencyLeaveBar').style.width = emergencyPercent + '%';
-  document.getElementById('vacationLeaveBar').style.width = vacationPercent + '%';
+  // Calculate total leave balance
+  const genderAppropriateLeaves = getGenderAppropriateLeaveTypes();
+  let totalLeaveQuota = 0;
+  let totalLeaveUsed = 0;
+
+  genderAppropriateLeaves.forEach(leaveType => {
+    const quota = leaveQuota[leaveType];
+    if (quota > 0) {
+      totalLeaveQuota += quota;
+      totalLeaveUsed += requestedByType[leaveType] || 0;
+    }
+  });
+
+  document.getElementById('totalLeaveBalance').textContent = String(totalLeaveQuota);
+  document.getElementById('totalLeaveUsed').textContent = `${totalLeaveUsed} used`;
+
   document.getElementById('upcomingTrainingCount').textContent = String(upcoming.length);
   document.getElementById('nextTrainingDate').textContent = upcoming.length
     ? 'Next: ' + upcoming[0].start
@@ -312,4 +1141,172 @@ function renderOverview() {
   document.getElementById('leavePendingCount').textContent = String(pendingLeaves);
   document.getElementById('leaveApprovedCount').textContent = String(approvedLeaves);
   document.getElementById('leaveRejectedCount').textContent = String(rejectedLeaves);
+}
+
+// ============ Gender-based Leave Type Filtering ============
+
+function getGenderAppropriateLeaveTypes() {
+  const genderLeaveMap = {
+    Male: [
+      'Vacation Leave',
+      'Sick Leave',
+      'Paternity Leave',
+      'Mandatory/Force Leave',
+      'Special Privilege Leave',
+      'Solo Parent Leave',
+      '10-Day VAWC Leave',
+      'Special Emergency (Calamity) Leave'
+    ],
+    Female: [
+      'Vacation Leave',
+      'Sick Leave',
+      'Maternity Leave',
+      'Mandatory/Force Leave',
+      'Special Privilege Leave',
+      'Solo Parent Leave',
+      '10-Day VAWC Leave',
+      'Special Emergency (Calamity) Leave'
+    ],
+    Other: [
+      'Vacation Leave',
+      'Sick Leave',
+      'Mandatory/Force Leave',
+      'Special Privilege Leave',
+      'Solo Parent Leave',
+      'Special Emergency (Calamity) Leave'
+    ]
+  };
+
+  return genderLeaveMap[currentUser.gender] || genderLeaveMap.Other;
+}
+
+function renderLeaveBalance(leaveQuota, requestedByType) {
+  const container = document.getElementById('leaveBalanceContainer');
+  container.innerHTML = '';
+
+  const allLeaveTypeConfig = [
+    { name: 'Vacation Leave', color: 'vacation' },
+    { name: 'Sick Leave', color: 'sick' },
+    { name: 'Maternity Leave', color: 'maternity' },
+    { name: 'Paternity Leave', color: 'paternity' },
+    { name: 'Mandatory/Force Leave', color: 'mandatory' },
+    { name: 'Special Privilege Leave', color: 'special' },
+    { name: 'Solo Parent Leave', color: 'soloparent' },
+    { name: '10-Day VAWC Leave', color: 'vawc' },
+    { name: 'Special Emergency (Calamity) Leave', color: 'calamity' }
+  ];
+
+  const genderAppropriateLeaves = getGenderAppropriateLeaveTypes();
+
+  allLeaveTypeConfig.forEach(config => {
+    const leaveType = config.name;
+    
+    // Only show leave types that are appropriate for the user's gender
+    if (!genderAppropriateLeaves.includes(leaveType)) {
+      return;
+    }
+
+    const quota = leaveQuota[leaveType];
+    const requested = requestedByType[leaveType] || 0;
+    const balance = Math.max(0, quota - requested);
+    const usedPercent = Math.round((requested / quota) * 100);
+    
+    // Only show leave types that have a quota
+    if (quota > 0) {
+      const item = document.createElement('div');
+      item.className = `attendance-tracker leave-balance-${config.color}`;
+      item.innerHTML = `
+        <p>${leaveType}</p>
+        <h4>${balance}</h4>
+        <div class="leave-progress-track" style="margin-top: 8px; background: rgba(0,0,0,0.1);">
+          <span class="leave-progress-fill" style="width: ${usedPercent}%; opacity: 0.6;"></span>
+        </div>
+        <small style="display: block; margin-top: 4px; font-size: 0.75rem; opacity: 0.8;">${requested}/${quota} used</small>
+      `;
+      container.appendChild(item);
+    }
+  });
+
+  // If no leave types with quota, show message
+  if (container.children.length === 0) {
+    container.innerHTML = '<p style="color: #999;">No leave balance information available.</p>';
+  }
+}
+
+// ============ Employee Notification System ============
+
+function showLeaveNotification(message, type = 'info', duration = 3000) {
+  // Create container if it doesn't exist
+  let container = document.getElementById('employeeNotificationContainer');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'employeeNotificationContainer';
+    container.style.cssText = `
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      z-index: 1000;
+      max-width: 400px;
+    `;
+    document.body.appendChild(container);
+  }
+
+  const notif = document.createElement('div');
+  notif.className = `notification notification-${type}`;
+  notif.style.cssText = `
+    background: ${getLeaveNotificationColor(type)};
+    color: white;
+    padding: 14px 18px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    animation: slideInNotif 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    word-wrap: break-word;
+    max-width: 100%;
+  `;
+  notif.textContent = message;
+  container.appendChild(notif);
+
+  setTimeout(() => {
+    notif.style.animation = 'slideOutNotif 0.3s ease';
+    setTimeout(() => notif.remove(), 300);
+  }, duration);
+}
+
+function getLeaveNotificationColor(type) {
+  switch(type) {
+    case 'success': return '#15803d';
+    case 'error': return '#dc2626';
+    case 'info': return '#0f766e';
+    default: return '#6b7280';
+  }
+}
+
+// Add animation styles if not already added
+if (!document.querySelector('style[data-notif-animations]')) {
+  const style = document.createElement('style');
+  style.setAttribute('data-notif-animations', 'true');
+  style.textContent = `
+    @keyframes slideInNotif {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    @keyframes slideOutNotif {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+    }
+  `;
+  document.head.appendChild(style);
 }
