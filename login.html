@@ -31,7 +31,14 @@
         </div>
         <div>
           <label for="loginPassword">Password</label>
-          <input id="loginPassword" type="password" required>
+          <div class="password-input-wrap">
+            <input id="loginPassword" type="password" required>
+            <button id="toggleLoginPassword" class="password-eye-toggle" type="button" aria-label="Show password" title="Show password">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M12 5C6.5 5 2.15 8.25 1 12c1.15 3.75 5.5 7 11 7s9.85-3.25 11-7c-1.15-3.75-5.5-7-11-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm0-6.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"></path>
+              </svg>
+            </button>
+          </div>
         </div>
         <button class="btn btn-primary" type="submit">Login</button>
       </form>

@@ -214,6 +214,86 @@ textarea{
 }
 input:focus,select:focus,textarea:focus{outline:2px solid #99f6e4;border-color:#2dd4bf}
 .form-note{font-size:.84rem;color:var(--muted)}
+.consent-row{
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+  font-size:.88rem;
+  font-weight:500;
+  color:#334155;
+  cursor:pointer;
+}
+.consent-row input[type="checkbox"]{
+  width:auto;
+  margin-top:2px;
+}
+.legal-note{
+  margin-top:-2px;
+  padding:10px;
+  border:1px solid #dbe2ea;
+  border-radius:10px;
+  background:#f8fafc;
+}
+.legal-note p{
+  margin:0;
+  font-size:.82rem;
+  color:#475569;
+  line-height:1.35;
+}
+.legal-note p + p{
+  margin-top:8px;
+}
+.legal-note a{
+  color:#0f766e;
+  font-weight:600;
+  text-decoration:none;
+}
+.legal-note a:hover{
+  text-decoration:underline;
+}
+.password-input-wrap{
+  position:relative;
+}
+.password-input-wrap input{
+  padding-right:42px;
+}
+.password-input-wrap input::-ms-reveal,
+.password-input-wrap input::-ms-clear{
+  display:none;
+}
+.password-eye-toggle{
+  position:absolute;
+  right:8px;
+  top:50%;
+  transform:translateY(-50%);
+  width:30px;
+  height:30px;
+  border:none;
+  background:transparent;
+  border-radius:8px;
+  padding:4px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  color:#64748b;
+}
+.password-eye-toggle svg{
+  width:100%;
+  height:100%;
+  fill:currentColor;
+}
+.password-eye-toggle:hover{
+  background:#f1f5f9;
+}
+.password-eye-toggle:focus-visible{
+  outline:2px solid #99f6e4;
+  outline-offset:1px;
+}
+.password-eye-toggle.is-active{
+  color:#0f766e;
+  background:#ecfeff;
+}
 .message{
   min-height:20px;
   font-size:.88rem;

@@ -13,9 +13,6 @@
   <header class="topbar">
     <div class="topbar-inner">
       <a class="brand" href="index.html">CHRIS Portal</a>
-      <div class="nav-actions">
-        <a class="btn btn-outline" href="login.html">Login</a>
-      </div>
     </div>
   </header>
 
@@ -24,17 +21,55 @@
       <h2>Create Account</h2>
       <p>Set up your account to start using CHRIS HRIS tools.</p>
       <form class="form" onsubmit="event.preventDefault(); signup();">
-        <div>
-          <label for="signupName">Full Name</label>
-          <input id="signupName" type="text" required>
+        <div class="grid-2">
+          <div>
+            <label for="signupSurname">Surname</label>
+            <input id="signupSurname" type="text" required>
+          </div>
+          <div>
+            <label for="signupFirstName">First Name</label>
+            <input id="signupFirstName" type="text" required>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div>
+            <label for="signupMiddleName">Middle Name</label>
+            <input id="signupMiddleName" type="text" required>
+          </div>
+          <div>
+            <label for="signupSuffix">Suffix</label>
+            <input id="signupSuffix" type="text" placeholder="Jr., Sr., III" required>
+          </div>
         </div>
         <div>
           <label for="signupEmail">Email</label>
           <input id="signupEmail" type="email" required>
         </div>
         <div>
+          <label for="signupBirthday">Birthday</label>
+          <input id="signupBirthday" type="date" required>
+        </div>
+        <div>
           <label for="signupPassword">Password</label>
-          <input id="signupPassword" type="password" minlength="6" required>
+          <div class="password-input-wrap">
+            <input id="signupPassword" name="newPassword" type="password" minlength="6" autocomplete="new-password" required>
+            <button id="toggleSignupPassword" class="password-eye-toggle" type="button" aria-label="Show password" title="Show password">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M12 5C6.5 5 2.15 8.25 1 12c1.15 3.75 5.5 7 11 7s9.85-3.25 11-7c-1.15-3.75-5.5-7-11-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm0-6.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div>
+          <label for="signupConfirmPassword">Confirm Password</label>
+          <div class="password-input-wrap">
+            <input id="signupConfirmPassword" name="confirmNewPassword" type="password" minlength="6" autocomplete="new-password" required>
+            <button id="toggleSignupConfirmPassword" class="password-eye-toggle" type="button" aria-label="Show confirm password" title="Show confirm password">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M12 5C6.5 5 2.15 8.25 1 12c1.15 3.75 5.5 7 11 7s9.85-3.25 11-7c-1.15-3.75-5.5-7-11-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm0-6.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"></path>
+              </svg>
+            </button>
+          </div>
         </div>
         <div>
           <label for="signupGender">Gender</label>
@@ -45,12 +80,17 @@
             <option value="Other">Other</option>
           </select>
         </div>
+        <div class="legal-note">
+          <p>People who use this service may have shared your contact details with CHRIS.</p>
+          <p>By tapping Sign Up, you agree to our <a href="terms.html">Terms</a>, <a href="privacy.html">Privacy Policy</a>, and <a href="cookies.html">Cookies Policy</a>.</p>
+        </div>
         <p class="form-note">Use at least 6 characters for better account safety.</p>
         <button class="btn btn-primary" type="submit">Sign Up</button>
       </form>
       <div id="authMessage" class="message"></div>
       <div class="inline-links">
         <a class="btn btn-outline" href="login.html">Already have an account?</a>
+        <a class="btn btn-outline" href="login.html">Login</a>
       </div>
     </section>
   </main>
