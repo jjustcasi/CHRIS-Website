@@ -64,7 +64,8 @@ function requireLogin() {
 
 function initializeDashboard() {
   if (!requireLogin()) return;
-  document.getElementById('userName').textContent = currentUser.name;
+  document.getElementById('profileName').textContent = currentUser.name;
+  document.getElementById('profileAvatar').textContent = getInitials(currentUser.name);
   document.getElementById('welcomeName').textContent = currentUser.name;
   document.getElementById('welcomePosition').textContent = currentUser.position;
   loadUserData();
@@ -77,6 +78,13 @@ function initializeDashboard() {
   renderAnnouncements();
   renderOverview();
   loadPdsForm();
+}
+
+function getInitials(name) {
+  const parts = (name || '').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return 'U';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
 function populateLeaveTypeDropdown() {
@@ -116,6 +124,10 @@ function showPage(page) {
   document.getElementById('leavePage').classList.toggle('hidden', page !== 'leave');
   document.getElementById('trainingPage').classList.toggle('hidden', page !== 'training');
   document.getElementById('pdsPage').classList.toggle('hidden', page !== 'pds');
+  const welcomeBanner = document.querySelector('.welcome-banner');
+  if (welcomeBanner) {
+    welcomeBanner.classList.toggle('hidden', page !== 'overview');
+  }
   document.getElementById('overviewBtn').classList.toggle('active', page === 'overview');
   document.getElementById('leaveBtn').classList.toggle('active', page === 'leave');
   document.getElementById('trainingBtn').classList.toggle('active', page === 'training');

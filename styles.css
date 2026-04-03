@@ -46,6 +46,8 @@ body{
 .nav-actions{
   display:flex;
   gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
 }
 .btn{
   border:none;
@@ -340,6 +342,47 @@ input:focus,select:focus,textarea:focus{outline:2px solid #99f6e4;border-color:#
   background:#111827;
   color:#d1d5db;
   font-size:.92rem;
+}
+.profile-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  padding:6px 12px 6px 6px;
+  border-radius:999px;
+  border:1px solid rgba(148,163,184,.45);
+  background:rgba(255,255,255,.86);
+  color:#0f172a;
+  text-decoration:none;
+  box-shadow:0 8px 20px rgba(15,23,42,.08);
+}
+.profile-chip:hover{
+  transform:translateY(-1px);
+}
+.profile-avatar{
+  width:34px;
+  height:34px;
+  border-radius:999px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
+  color:#fff;
+  font-weight:700;
+  font-size:.92rem;
+  letter-spacing:.02em;
+  flex:0 0 auto;
+}
+.profile-meta{
+  display:flex;
+  flex-direction:column;
+  line-height:1.05;
+}
+.profile-meta strong{
+  font-size:.92rem;
+}
+.profile-meta small{
+  color:var(--muted);
+  font-size:.72rem;
 }
 .main{
   background:rgba(255,255,255,.9);
