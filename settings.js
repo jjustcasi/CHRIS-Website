@@ -59,23 +59,10 @@ function saveSettings() {
   const department = document.getElementById('department').value.trim();
   const position = document.getElementById('position').value.trim();
   const phone = document.getElementById('phone').value.trim();
-  const newPassword = document.getElementById('newPassword').value;
-  const confirmPassword = document.getElementById('confirmPassword').value;
 
   if (!fullName) {
     showMessage('Full name is required.', false);
     return;
-  }
-
-  if (newPassword || confirmPassword) {
-    if (newPassword.length < 6) {
-      showMessage('New password must be at least 6 characters.', false);
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      showMessage('Password confirmation does not match.', false);
-      return;
-    }
   }
 
   const users = getUsers();
@@ -90,15 +77,11 @@ function saveSettings() {
     name: fullName,
     department,
     position: position || 'CHR Employee',
-    phone,
-    ...(newPassword ? { password: newPassword } : {})
+    phone
   };
 
   saveUsers(users);
   currentUser = users[idx];
-
-  document.getElementById('newPassword').value = '';
-  document.getElementById('confirmPassword').value = '';
   showMessage('Profile updated successfully.', true);
 }
 

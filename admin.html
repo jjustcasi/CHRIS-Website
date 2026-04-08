@@ -50,6 +50,7 @@
           <aside class="sidebar">
             <h2>Admin Portal</h2>
             <button onclick="showAdminPage('overview')" class="menu-btn active" id="overviewBtn">Overview</button>
+            <button onclick="showAdminPage('announcements')" class="menu-btn" id="announcementsBtn">Announcements</button>
             <button onclick="showAdminPage('leaves')" class="menu-btn" id="leavesBtn">
               Leave Monitoring
               <span id="pendingBadge" style="background: #ff4444; color: white; padding: 2px 6px; border-radius: 12px; font-size: 0.8rem; margin-left: 6px; display: none;"></span>
@@ -260,13 +261,6 @@
                 <button class="btn btn-primary" onclick="saveEmployeeEvaluation()">Save Rating</button>
               </div>
 
-              <!-- Announcement Section -->
-              <div class="card">
-                <h3>Company Announcements</h3>
-                <input id="adminAnnouncementInput" placeholder="Post a company announcement..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; font-family: inherit;">
-                <button class="btn btn-primary" onclick="addGlobalAnnouncement()">Post Announcement</button>
-                <div id="adminAnnouncementBoard" class="announcement-board" style="margin-top: 20px;"></div>
-              </div>
             </div>
 
             <!-- CivHR Personal Data Sheet Page -->
@@ -319,6 +313,27 @@
                     <tbody></tbody>
                   </table>
                 </div>
+              </div>
+            </div>
+
+            <div id="announcementsPage" class="hidden">
+              <div class="welcome-banner">
+                <h2>Announcements Module</h2>
+                <p>Post organization-wide announcements for all client dashboards.</p>
+              </div>
+
+              <div class="card">
+                <h3>Create Announcement</h3>
+                <input id="adminAnnouncementInput" placeholder="Announcement title" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; font-family: inherit;">
+                <textarea id="adminAnnouncementDetails" rows="3" placeholder="Announcement details (optional)" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; font-family: inherit;"></textarea>
+                <input id="adminAnnouncementImage" type="file" accept="image/*" style="width: 100%; margin-bottom: 8px;">
+                <p class="form-note" style="margin-top: 0;">Optional: attach an image (JPG, PNG, WEBP, GIF).</p>
+                <button class="btn btn-primary" onclick="addGlobalAnnouncement()">Post Announcement</button>
+              </div>
+
+              <div class="card">
+                <h3>Posted Announcements</h3>
+                <div id="adminAnnouncementBoard" class="announcement-board"></div>
               </div>
             </div>
           </div>

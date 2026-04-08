@@ -2,6 +2,17 @@ function getUsers() {
   return JSON.parse(localStorage.getItem('chris_users') || '[]');
 }
 
+function upsertLocalUser(user) {
+  const users = getUsers();
+  const idx = users.findIndex((u) => u.email === user.email);
+  if (idx === -1) {
+    users.push(user);
+  } else {
+    users[idx] = { ...users[idx], ...user };
+  }
+  saveUsers(users);
+}
+
 function saveUsers(users) {
   localStorage.setItem('chris_users', JSON.stringify(users));
 }
@@ -12,6 +23,30 @@ function setSession(email) {
 
 function getSession() {
   return localStorage.getItem('chris_session');
+}
+
+function getApiBaseUrls() {
+  const urls = ['http://127.0.0.1:4000/api', 'http://localhost:4000/api'];
+
+  if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+    urls.unshift(`${window.location.protocol}//${window.location.hostname}:4000/api`);
+  }
+
+  return [...new Set(urls.filter(Boolean))];
+}
+
+async function fetchApi(path, options) {
+  let lastError = null;
+
+  for (const baseUrl of getApiBaseUrls()) {
+    try {
+      return await fetch(`${baseUrl}${path}`, options);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error('Unable to reach backend.');
 }
 
 function setAdminSession(active) {
@@ -168,11 +203,12 @@ document.addEventListener('DOMContentLoaded', () => {
   setupLoginPasswordEyeButton();
 });
 
-function signup() {
+async function signup() {
   const surname = document.getElementById('signupSurname').value.trim().toUpperCase();
   const firstName = document.getElementById('signupFirstName').value.trim().toUpperCase();
   const middleName = document.getElementById('signupMiddleName').value.trim().toUpperCase();
-  const suffix = document.getElementById('signupSuffix').value.trim().toUpperCase();
+  const rawSuffix = document.getElementById('signupSuffix').value.trim().toUpperCase();
+  const suffix = rawSuffix === 'N/A' ? '' : rawSuffix;
   const email = document.getElementById('signupEmail').value.trim().toLowerCase();
   const birthday = document.getElementById('signupBirthday').value;
   const password = document.getElementById('signupPassword').value;
@@ -182,7 +218,7 @@ function signup() {
   const nameParts = [firstName, middleName, surname].filter(Boolean);
   const name = nameParts.join(' ') + (suffix ? ' ' + suffix : '');
 
-  if (!surname || !firstName || !middleName || !suffix || !email || !birthday || !password || !confirmPassword || !gender) {
+  if (!surname || !firstName || !middleName || !email || !birthday || !password || !confirmPassword || !gender) {
     showMessage('authMessage', 'Please complete all sign up fields.', false);
     return;
   }
@@ -197,43 +233,66 @@ function signup() {
     return;
   }
 
-  const users = getUsers();
-  if (users.some(u => u.email === email)) {
-    showMessage('authMessage', 'Account already exists. Please login instead.', false);
-    return;
-  }
+  try {
+    const response = await fetchApi('/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        surname,
+        firstName,
+        middleName,
+        suffix,
+        email,
+        birthday,
+        password,
+        confirmPassword,
+        gender
+      })
+    });
 
-  users.push({
-    name,
-    surname,
-    firstName,
-    middleName,
-    suffix,
-    email,
-    birthday,
-    password,
-    gender
-  });
-  saveUsers(users);
-  sessionStorage.removeItem(SIGNUP_DRAFT_KEY);
-  setSession(email);
-  localStorage.setItem('chris_leaves_' + email, JSON.stringify([]));
-  localStorage.setItem('chris_trainings_' + email, JSON.stringify([]));
-  window.location.href = 'dashboard.html';
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      showMessage('authMessage', result.message || 'Unable to sign up. Please try again.', false);
+      return;
+    }
+
+    if (result.user) {
+      upsertLocalUser(result.user);
+    }
+
+    sessionStorage.removeItem(SIGNUP_DRAFT_KEY);
+    setSession(email);
+    localStorage.setItem('chris_leaves_' + email, JSON.stringify([]));
+    localStorage.setItem('chris_trainings_' + email, JSON.stringify([]));
+    window.location.href = 'dashboard.html';
+  } catch (_error) {
+    showMessage('authMessage', 'Cannot connect to backend. Start the server and try again.', false);
+  }
 }
 
-function login() {
+async function login() {
   const email = document.getElementById('loginEmail').value.trim().toLowerCase();
   const password = document.getElementById('loginPassword').value;
 
-  const user = getUsers().find(u => u.email === email && u.password === password);
+  try {
+    const response = await fetchApi('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
 
-  if (!user) {
-    showMessage('authMessage', 'Invalid email or password.', false);
-    return;
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result.user) {
+      showMessage('authMessage', result.message || 'Invalid email or password.', false);
+      return;
+    }
+
+    upsertLocalUser(result.user);
+    setAdminSession(false);
+    setSession(result.user.email);
+    window.location.href = 'dashboard.html';
+  } catch (_error) {
+    showMessage('authMessage', 'Cannot connect to backend. Start the server and try again.', false);
   }
-
-  setAdminSession(false);
-  setSession(user.email);
-  window.location.href = 'dashboard.html';
 }

@@ -5,6 +5,30 @@ let announcements = [];
 let evaluation = { status: '' };
 let pdsData = {};
 let currentUser = null;
+
+function getApiBaseUrls() {
+  const urls = ['http://127.0.0.1:4000/api', 'http://localhost:4000/api'];
+
+  if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+    urls.unshift(`${window.location.protocol}//${window.location.hostname}:4000/api`);
+  }
+
+  return [...new Set(urls.filter(Boolean))];
+}
+
+async function fetchApi(path, options) {
+  let lastError = null;
+
+  for (const baseUrl of getApiBaseUrls()) {
+    try {
+      return await fetch(`${baseUrl}${path}`, options);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error('Unable to reach backend.');
+}
 let signaturePadCtx = null;
 let isSignatureDrawing = false;
 let finalSignaturePadCtx = null;
@@ -22,6 +46,12 @@ function clearSession() {
   localStorage.removeItem('chris_session');
 }
 
+function cleanDisplayName(name) {
+  const trimmed = (name || '').trim();
+  if (!trimmed) return '';
+  return trimmed.replace(/\s+N\/?A\.?$/i, '').trim();
+}
+
 function userDataKey(type) {
   return 'chris_' + type + '_' + currentUser.email;
 }
@@ -30,7 +60,6 @@ function loadUserData() {
   leaves = JSON.parse(localStorage.getItem(userDataKey('leaves')) || '[]');
   trainings = JSON.parse(localStorage.getItem(userDataKey('trainings')) || '[]');
   attendance = JSON.parse(localStorage.getItem(userDataKey('attendance')) || '[]');
-  announcements = JSON.parse(localStorage.getItem('chris_global_announcements') || '[]');
   evaluation = JSON.parse(localStorage.getItem(userDataKey('evaluation')) || '{"status":""}');
   pdsData = JSON.parse(localStorage.getItem(userDataKey('pds')) || '{}');
 }
@@ -41,6 +70,18 @@ function saveUserData() {
   localStorage.setItem(userDataKey('attendance'), JSON.stringify(attendance));
   localStorage.setItem(userDataKey('evaluation'), JSON.stringify(evaluation));
   localStorage.setItem(userDataKey('pds'), JSON.stringify(pdsData));
+}
+
+async function fetchAnnouncementsFromApi() {
+  const response = await fetchApi('/announcements');
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload.message || 'Unable to load announcements.');
+  }
+
+  const items = Array.isArray(payload.announcements) ? payload.announcements : [];
+  localStorage.setItem('chris_global_announcements', JSON.stringify(items));
+  return items;
 }
 
 function requireLogin() {
@@ -56,8 +97,9 @@ function requireLogin() {
     return false;
   }
   currentUser = {
-    name: user.name,
+    name: cleanDisplayName(user.name),
     email: user.email,
+    birthday: user.birthday || '',
     position: user.position || 'CHR Employee',
     gender: user.gender || ''
   };
@@ -124,6 +166,7 @@ function logout() {
 
 function showPage(page) {
   document.getElementById('overviewPage').classList.toggle('hidden', page !== 'overview');
+  document.getElementById('announcementsPage').classList.toggle('hidden', page !== 'announcements');
   document.getElementById('leavePage').classList.toggle('hidden', page !== 'leave');
   document.getElementById('trainingPage').classList.toggle('hidden', page !== 'training');
   document.getElementById('pdsPage').classList.toggle('hidden', page !== 'pds');
@@ -132,6 +175,7 @@ function showPage(page) {
     welcomeBanner.classList.toggle('hidden', page !== 'overview');
   }
   document.getElementById('overviewBtn').classList.toggle('active', page === 'overview');
+  document.getElementById('announcementsBtn').classList.toggle('active', page === 'announcements');
   document.getElementById('leaveBtn').classList.toggle('active', page === 'leave');
   document.getElementById('trainingBtn').classList.toggle('active', page === 'training');
   document.getElementById('pdsBtn').classList.toggle('active', page === 'pds');
@@ -421,6 +465,7 @@ function prevPdsSection() {
 function loadPdsForm() {
   const defaults = {
     pdsEmail: currentUser.email,
+    pdsDob: currentUser.birthday || '',
     pdsSexAtBirth: currentUser.gender || '',
     pdsSignatureDate: new Date().toISOString().slice(0, 10),
     ...inferNameParts(currentUser.name)
@@ -440,6 +485,9 @@ function loadPdsForm() {
       field.value = defaults[fieldId];
     }
   });
+
+  setupPdsUppercaseInputs();
+  normalizeAllPdsUppercaseValues();
 
   syncSexAtBirthCheckboxes();
   syncCivilStatusCheckboxes();
@@ -774,6 +822,43 @@ function getFieldValue(id) {
   return field ? (field.value || '').trim() : '';
 }
 
+function shouldForcePdsUppercase(field) {
+  if (!field) return false;
+  if (!(field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement)) return false;
+
+  if (field instanceof HTMLInputElement) {
+    const blockedTypes = ['date', 'number', 'checkbox', 'radio', 'file', 'hidden'];
+    if (blockedTypes.includes(field.type)) return false;
+  }
+
+  return true;
+}
+
+function normalizePdsUppercaseValue(field) {
+  if (!shouldForcePdsUppercase(field)) return;
+  field.value = (field.value || '').toUpperCase();
+}
+
+function setupPdsUppercaseInputs() {
+  pdsFieldIds.forEach(fieldId => {
+    const field = document.getElementById(fieldId);
+    if (!shouldForcePdsUppercase(field) || field.dataset.uppercaseBound === 'true') return;
+
+    field.addEventListener('input', () => {
+      normalizePdsUppercaseValue(field);
+    });
+
+    field.dataset.uppercaseBound = 'true';
+  });
+}
+
+function normalizeAllPdsUppercaseValues() {
+  pdsFieldIds.forEach(fieldId => {
+    const field = document.getElementById(fieldId);
+    normalizePdsUppercaseValue(field);
+  });
+}
+
 function setFieldValue(id, value) {
   const field = document.getElementById(id);
   if (field) field.value = value || '';
@@ -936,6 +1021,8 @@ function showPdsMessage(text, ok) {
 
 function savePds() {
   if (!currentUser) return;
+
+  normalizeAllPdsUppercaseValues();
 
   const surname = (document.getElementById('pdsSurname').value || '').trim();
   const firstName = (document.getElementById('pdsFirstName').value || '').trim();
@@ -1284,27 +1371,61 @@ function renderAttendance() {
   absentEl.textContent = String(absent);
 }
 
-function renderAnnouncements() {
-  const board = document.getElementById('announcementBoard');
-  if (!board) return;
-  board.innerHTML = '';
+function getAnnouncementTitle(item) {
+  return (item && (item.title || item.text) ? String(item.title || item.text).trim() : '') || 'Announcement';
+}
 
-  if (!announcements.length) {
-    board.innerHTML = '<p class="form-note">No announcements yet.</p>';
-    return;
+async function renderAnnouncements() {
+  const overviewBoard = document.getElementById('announcementBoard');
+  const moduleBoard = document.getElementById('announcementModuleBoard');
+  try {
+    announcements = await fetchAnnouncementsFromApi();
+  } catch (_) {
+    announcements = [];
   }
 
-  announcements.forEach(item => {
-    const block = document.createElement('div');
-    block.className = 'announcement-item';
-    block.innerHTML = `
-      <div>
-        <strong>${item.text}</strong>
-        <p class="form-note">Posted: ${item.date}</p>
-      </div>`;
-    board.appendChild(block);
-  });
+  if (overviewBoard) {
+    overviewBoard.innerHTML = '';
+    if (!announcements.length) {
+      overviewBoard.innerHTML = '<p class="form-note">No announcements yet.</p>';
+    } else {
+      announcements.forEach(item => {
+        const block = document.createElement('div');
+        block.className = 'announcement-item';
+        block.innerHTML = `
+          <div class="announcement-content">
+            <strong>${getAnnouncementTitle(item)}</strong>
+          </div>`;
+        overviewBoard.appendChild(block);
+      });
+    }
+  }
+
+  if (moduleBoard) {
+    moduleBoard.innerHTML = '';
+    if (!announcements.length) {
+      moduleBoard.innerHTML = '<p class="form-note">No announcements yet.</p>';
+    } else {
+      announcements.forEach(item => {
+        const block = document.createElement('div');
+        block.className = 'announcement-item';
+        block.innerHTML = `
+          <div class="announcement-content">
+            <strong>${getAnnouncementTitle(item)}</strong>
+            ${item.details ? `<p class="form-note" style="margin: 0; color: #334155;">${item.details}</p>` : ''}
+            ${item.imageDataUrl ? `<img src="${item.imageDataUrl}" alt="Announcement image" class="announcement-image">` : ''}
+            <p class="form-note">Posted: ${item.date}</p>
+          </div>`;
+        moduleBoard.appendChild(block);
+      });
+    }
+  }
 }
+
+window.addEventListener('storage', (event) => {
+  if (event.key !== 'chris_global_announcements') return;
+  renderAnnouncements().catch(() => {});
+});
 
 function renderOverview() {
   const leaveQuota = {

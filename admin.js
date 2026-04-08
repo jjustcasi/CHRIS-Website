@@ -2,6 +2,30 @@ const ADMIN_SESSION_KEY = 'chris_admin_session';
 const ADMIN_EMAIL = 'admin@chris.local';
 const ADMIN_PASSWORD = 'admin123';
 
+function getApiBaseUrls() {
+  const urls = ['http://127.0.0.1:4000/api', 'http://localhost:4000/api'];
+
+  if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+    urls.unshift(`${window.location.protocol}//${window.location.hostname}:4000/api`);
+  }
+
+  return [...new Set(urls.filter(Boolean))];
+}
+
+async function fetchApi(path, options) {
+  let lastError = null;
+
+  for (const baseUrl of getApiBaseUrls()) {
+    try {
+      return await fetch(`${baseUrl}${path}`, options);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error('Unable to reach backend.');
+}
+
 let selectedEmployeeEmail = '';
 let currentLeaveInModal = null;
 
@@ -431,33 +455,119 @@ function saveGlobalAnnouncements(items) {
   localStorage.setItem('chris_global_announcements', JSON.stringify(items));
 }
 
-function addGlobalAnnouncement() {
-  const input = document.getElementById('adminAnnouncementInput');
-  const text = input.value.trim();
-  if (!text) return;
+async function fetchGlobalAnnouncementsFromApi() {
+  const response = await fetchApi('/announcements');
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload.message || 'Unable to load announcements.');
+  }
 
-  const items = getGlobalAnnouncements();
-  items.unshift({
-    id: Date.now(),
-    text,
-    date: new Date().toISOString().slice(0, 10)
+  const items = Array.isArray(payload.announcements) ? payload.announcements : [];
+  saveGlobalAnnouncements(items);
+  return items;
+}
+
+async function createAnnouncementInApi(announcement) {
+  const response = await fetchApi('/announcements', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(announcement)
   });
-  saveGlobalAnnouncements(items);
-  input.value = '';
-  renderGlobalAnnouncements();
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload.message || 'Unable to create announcement.');
+  }
+
+  return payload.announcement;
 }
 
-function removeGlobalAnnouncement(id) {
-  const items = getGlobalAnnouncements().filter(item => item.id !== id);
-  saveGlobalAnnouncements(items);
-  renderGlobalAnnouncements();
+async function deleteAnnouncementInApi(id) {
+  const response = await fetchApi(`/announcements/${encodeURIComponent(id)}`, {
+    method: 'DELETE'
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload.message || 'Unable to delete announcement.');
+  }
 }
 
-function renderGlobalAnnouncements() {
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('Unable to read image file.'));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function addGlobalAnnouncement() {
+  const input = document.getElementById('adminAnnouncementInput');
+  const detailsInput = document.getElementById('adminAnnouncementDetails');
+  const imageInput = document.getElementById('adminAnnouncementImage');
+  const text = input.value.trim();
+  const details = detailsInput ? detailsInput.value.trim() : '';
+  const imageFile = imageInput && imageInput.files ? imageInput.files[0] : null;
+
+  if (!text && !imageFile) return;
+
+  let imageDataUrl = '';
+  if (imageFile) {
+    if (!imageFile.type || !imageFile.type.startsWith('image/')) {
+      showNotification('Please upload a valid image file for announcements.', 'error');
+      return;
+    }
+
+    if (imageFile.size > 5 * 1024 * 1024) {
+      showNotification('Announcement image must be 5MB or less.', 'error');
+      return;
+    }
+
+    try {
+      imageDataUrl = await readFileAsDataUrl(imageFile);
+    } catch (_) {
+      showNotification('Failed to attach the selected image.', 'error');
+      return;
+    }
+  }
+
+  try {
+    await createAnnouncementInApi({
+      title: text,
+      text,
+      details,
+      imageDataUrl
+    });
+    input.value = '';
+    if (detailsInput) detailsInput.value = '';
+    if (imageInput) imageInput.value = '';
+    await renderGlobalAnnouncements();
+    showNotification('Announcement posted successfully.', 'success');
+  } catch (error) {
+    showNotification(error.message || 'Cannot connect to backend announcements service.', 'error');
+  }
+}
+
+async function removeGlobalAnnouncement(id) {
+  try {
+    await deleteAnnouncementInApi(id);
+    await renderGlobalAnnouncements();
+  } catch (error) {
+    showNotification(error.message || 'Cannot delete announcement right now.', 'error');
+  }
+}
+
+async function renderGlobalAnnouncements() {
   const board = document.getElementById('adminAnnouncementBoard');
+  if (!board) return;
   board.innerHTML = '';
 
-  const items = getGlobalAnnouncements();
+  let items = [];
+  try {
+    items = await fetchGlobalAnnouncementsFromApi();
+  } catch (_) {
+    showNotification('Unable to refresh announcements from the backend right now.', 'error');
+  }
+
   if (!items.length) {
     board.innerHTML = '<p class="form-note">No announcements posted yet.</p>';
     return;
@@ -467,11 +577,13 @@ function renderGlobalAnnouncements() {
     const block = document.createElement('div');
     block.className = 'announcement-item';
     block.innerHTML = `
-      <div>
-        <strong>${item.text}</strong>
+      <div class="announcement-content">
+        ${item.title || item.text ? `<strong>${item.title || item.text}</strong>` : '<strong>Announcement</strong>'}
+        ${item.details ? `<p class="form-note" style="margin: 0; color: #334155;">${item.details}</p>` : ''}
+        ${item.imageDataUrl ? `<img src="${item.imageDataUrl}" alt="Announcement image" class="announcement-image">` : ''}
         <p class="form-note">Posted: ${item.date}</p>
       </div>
-      <button class="btn btn-danger" onclick="removeGlobalAnnouncement(${item.id})">Delete</button>`;
+      <button class="btn btn-danger" onclick="removeGlobalAnnouncement('${item.id}')">Delete</button>`;
     board.appendChild(block);
   });
 }
@@ -503,6 +615,7 @@ function showAdminPage(pageName) {
   document.getElementById('employeesPage').classList.add('hidden');
   document.getElementById('civhrPage').classList.add('hidden');
   document.getElementById('trainingPage').classList.add('hidden');
+  document.getElementById('announcementsPage').classList.add('hidden');
 
   // Remove active class from all menu buttons
   document.getElementById('overviewBtn').classList.remove('active');
@@ -510,6 +623,7 @@ function showAdminPage(pageName) {
   document.getElementById('employeesBtn').classList.remove('active');
   document.getElementById('civhrBtn').classList.remove('active');
   document.getElementById('trainingBtn').classList.remove('active');
+  document.getElementById('announcementsBtn').classList.remove('active');
 
   // Show selected page and mark button as active
   if (pageName === 'overview') {
@@ -535,6 +649,10 @@ function showAdminPage(pageName) {
     document.getElementById('trainingBtn').classList.add('active');
     hydrateEmployeeSelect();
     renderTrainingMonitoring();
+  } else if (pageName === 'announcements') {
+    document.getElementById('announcementsPage').classList.remove('hidden');
+    document.getElementById('announcementsBtn').classList.add('active');
+    renderGlobalAnnouncements();
   }
 }
 

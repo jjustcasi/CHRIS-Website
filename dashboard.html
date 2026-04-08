@@ -31,6 +31,7 @@
       <aside class="sidebar">
         <h2>Dashboard</h2>
         <button onclick="showPage('overview')" class="menu-btn active" id="overviewBtn">Overview</button>
+        <button onclick="showPage('announcements')" class="menu-btn" id="announcementsBtn">Announcements</button>
         <button onclick="showPage('leave')" class="menu-btn" id="leaveBtn">Request Leave</button>
         <button onclick="showPage('training')" class="menu-btn" id="trainingBtn">Training & Development</button>
         <button onclick="showPage('pds')" class="menu-btn" id="pdsBtn">PDS Form</button>
@@ -47,7 +48,7 @@
 
           <div class="card">
             <h3>Announcement Board</h3>
-            <p class="form-note">Company announcements are posted by HR/Admin.</p>
+            <p class="form-note">Only announcement titles are shown here. Open the Announcements module for full details.</p>
             <div id="announcementBoard" class="announcement-board"></div>
           </div>
 
@@ -110,6 +111,15 @@
                 <h4 id="attendanceAbsentCount">0</h4>
               </div>
             </div>
+          </div>
+        </div>
+
+        <div id="announcementsPage" class="hidden">
+          <h2>Announcements</h2>
+          <div class="card">
+            <h3>Announcement Details</h3>
+            <p class="form-note">View complete announcement details, images, and posting dates from HR/Admin.</p>
+            <div id="announcementModuleBoard" class="announcement-board"></div>
           </div>
         </div>
 
@@ -290,7 +300,7 @@
                   <div class="pds-sheet-left">
                     <div class="pds-sheet-row">
                       <div class="pds-sheet-label">3. DATE OF BIRTH <span>(dd/mm/yyyy)</span></div>
-                      <div class="pds-sheet-value"><input id="pdsDob" type="text" placeholder="dd/mm/yyyy"></div>
+                      <div class="pds-sheet-value"><input id="pdsDob" type="date"></div>
                     </div>
                     <div class="pds-sheet-row">
                       <div class="pds-sheet-label">4. PLACE OF BIRTH</div>
