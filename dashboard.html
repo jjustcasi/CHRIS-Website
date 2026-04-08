@@ -240,8 +240,34 @@
               <p class="pds-instruction">Print legibly if accomplished through own handwriting. Tick appropriate boxes and use separate sheet if necessary. Indicate N/A if not applicable. <strong>DO NOT ABBREVIATE.</strong></p>
             </div>
 
+            <!-- Progress Bar -->
+            <div class="pds-progress-container">
+              <div class="pds-progress-bar">
+                <div class="pds-progress-fill" id="pdsProgressFill"></div>
+              </div>
+              <div class="pds-progress-steps">
+                <div class="pds-step active" data-step="1">
+                  <span class="pds-step-number">1</span>
+                  <span class="pds-step-label">Personal Info</span>
+                </div>
+                <div class="pds-step" data-step="2">
+                  <span class="pds-step-number">2</span>
+                  <span class="pds-step-label">Family Background</span>
+                </div>
+                <div class="pds-step" data-step="3">
+                  <span class="pds-step-number">3</span>
+                  <span class="pds-step-label">Education</span>
+                </div>
+                <div class="pds-step" data-step="7">
+                  <span class="pds-step-number">7</span>
+
+                  <span class="pds-step-label">Other Info</span>
+                </div>
+              </div>
+            </div>
+
             <form id="pdsForm" class="pds-form" onsubmit="event.preventDefault(); savePds();">
-              <fieldset class="pds-fieldset">
+              <fieldset class="pds-fieldset" id="pdsSection1">
                 <legend>I. Personal Information</legend>
                 <table class="pds-name-table">
                   <tr>
@@ -400,7 +426,7 @@
                 </div>
               </fieldset>
 
-              <fieldset class="pds-fieldset">
+              <fieldset class="pds-fieldset pds-section-hidden" id="pdsSection2">
                 <legend>II. Family Background</legend>
                 <table class="pds-family-table">
                   <tr>
@@ -500,12 +526,15 @@
                   </tr>
                 </table>
 
+                  </tr>
+                </table>
+
                 <input id="pdsFatherName" type="hidden">
                 <input id="pdsMotherName" type="hidden">
                 <textarea id="pdsChildren" class="hidden"></textarea>
               </fieldset>
 
-              <fieldset class="pds-fieldset">
+              <fieldset class="pds-fieldset pds-section-hidden" id="pdsSection3">
                 <legend>III. Educational Background</legend>
                 <div class="pds-edu-wrap">
                   <table class="pds-education-table">
@@ -599,51 +628,371 @@
                       <input id="pdsSignatureDate" type="date">
                     </td>
                   </tr>
+                  </tr>
                 </table>
               </fieldset>
 
-              <fieldset class="pds-fieldset">
-                <legend>Additional PDS Information</legend>
-                <div class="pds-mini-table">
-                  <div class="pds-mini-head">Section</div>
-                  <div class="pds-mini-head">Details</div>
-
+              <fieldset class="pds-fieldset pds-section-hidden" id="pdsSection4">
+                <legend>IV. Civil Service Eligibility</legend>
+                <div class="pds-civil-service-section">
                   <div class="pds-mini-label">IV. CIVIL SERVICE ELIGIBILITY</div>
                   <div class="pds-mini-cell">
                     <textarea id="pdsCivilService" rows="3" placeholder="Eligibility, rating, examination date/place, license number"></textarea>
                   </div>
 
-                  <div class="pds-mini-label">V. WORK EXPERIENCE</div>
-                  <div class="pds-mini-cell">
-                    <textarea id="pdsWorkExperience" rows="3" placeholder="Position title, agency/company, dates, status, government service"></textarea>
-                  </div>
-
-                  <div class="pds-mini-label">VI. VOLUNTARY WORK OR INVOLVEMENT</div>
-                  <div class="pds-mini-cell">
-                    <textarea id="pdsVoluntaryWork" rows="3" placeholder="Organization, dates, number of hours, nature of work"></textarea>
-                  </div>
-
-                  <div class="pds-mini-label">VII. LEARNING AND DEVELOPMENT INTERVENTIONS/TRAINING PROGRAMS ATTENDED</div>
-                  <div class="pds-mini-cell">
-                    <textarea id="pdsLearningDevelopment" rows="3" placeholder="Training title, dates, hours, type, conducted/sponsored by"></textarea>
-                  </div>
-
-                  <div class="pds-mini-label">VIII. SPECIAL SKILLS and HOBBIES</div>
-                  <div class="pds-mini-cell">
-                    <textarea id="pdsSkills" rows="3"></textarea>
-                  </div>
-
-                  <div class="pds-mini-label">MEMBERSHIP IN ASSOCIATION/ORGANIZATION</div>
-                  <div class="pds-mini-cell">
-                    <textarea id="pdsMembership" rows="3"></textarea>
+                  <div class="pds-civil-service-table-wrap">
+                    <table class="pds-civil-service-table">
+                      <thead>
+                        <tr>
+                          <th>CES/CSEE/CAREER SERVICE/RA 1080 (BOARD/BAR)/UNDER SPECIAL LAWS/CATEGORY I/II/IV ELIGIBILITY AND ELIGIBILITIES FOR UNIFORMED PERSONNEL</th>
+                          <th>RATING (If Applicable)</th>
+                          <th>DATE OF EXAMINATION / CONFERMENT</th>
+                          <th>PLACE OF EXAMINATION / CONFERMENT</th>
+                          <th colspan="2">LICENSE (if applicable)</th>
+                        </tr>
+                        <tr>
+                          <th></th>
+                          <th></th>
+                          <th></th>
+                          <th></th>
+                          <th>NUMBER</th>
+                          <th>Valid Until</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td><input id="pdsCivilType1" type="text"></td>
+                          <td><input id="pdsCivilRating1" type="text"></td>
+                          <td><input id="pdsCivilDate1" type="text" placeholder="dd/mm/yyyy"></td>
+                          <td><input id="pdsCivilPlace1" type="text"></td>
+                          <td><input id="pdsCivilLicense1Number" type="text"></td>
+                          <td><input id="pdsCivilLicense1ValidUntil" type="date"></td>
+                        </tr>
+                        <tr>
+                          <td><input id="pdsCivilType2" type="text"></td>
+                          <td><input id="pdsCivilRating2" type="text"></td>
+                          <td><input id="pdsCivilDate2" type="text" placeholder="dd/mm/yyyy"></td>
+                          <td><input id="pdsCivilPlace2" type="text"></td>
+                          <td><input id="pdsCivilLicense2Number" type="text"></td>
+                          <td><input id="pdsCivilLicense2ValidUntil" type="date"></td>
+                        </tr>
+                        <tr>
+                          <td><input id="pdsCivilType3" type="text"></td>
+                          <td><input id="pdsCivilRating3" type="text"></td>
+                          <td><input id="pdsCivilDate3" type="text" placeholder="dd/mm/yyyy"></td>
+                          <td><input id="pdsCivilPlace3" type="text"></td>
+                          <td><input id="pdsCivilLicense3Number" type="text"></td>
+                          <td><input id="pdsCivilLicense3ValidUntil" type="date"></td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </fieldset>
 
-              <div class="pds-actions">
-                <button class="btn btn-primary" type="submit">Save PDS</button>
-                <button class="btn btn-outline" type="button" onclick="resetPdsForm()">Reset Form</button>
+              <fieldset class="pds-fieldset pds-section-hidden" id="pdsSection5">
+                <legend>V. Work Experience</legend>
+                <p class="pds-section-note">(Include private employment. Start from your recent work.) Description of duties should be indicated in the attached Work Experience Sheet.</p>
+                <div class="pds-work-experience-table-wrap">
+                  <table class="pds-work-experience-table">
+                    <thead>
+                      <tr>
+                        <th colspan="2">INCLUSIVE DATES (dd/mm/yy)</th>
+                        <th>POSITION TITLE (Write in full/Do not abbreviate)</th>
+                        <th>DEPARTMENT / AGENCY / OFFICE / COMPANY (Write in full/Do not abbreviate)</th>
+                        <th>STATUS OF APPOINTMENT</th>
+                        <th>GOVT SERVICE (Y/N)</th>
+                      </tr>
+                      <tr>
+                        <th>From</th>
+                        <th>To</th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><input id="pdsWorkFrom1" type="text" placeholder="dd/mm/yy"></td>
+                        <td><input id="pdsWorkTo1" type="text" placeholder="dd/mm/yy"></td>
+                        <td><input id="pdsWorkPosition1" type="text"></td>
+                        <td><input id="pdsWorkCompany1" type="text"></td>
+                        <td><input id="pdsWorkStatus1" type="text"></td>
+                        <td><input id="pdsWorkGovt1" type="text" placeholder="Y/N"></td>
+                      </tr>
+                      <tr>
+                        <td><input id="pdsWorkFrom2" type="text" placeholder="dd/mm/yy"></td>
+                        <td><input id="pdsWorkTo2" type="text" placeholder="dd/mm/yy"></td>
+                        <td><input id="pdsWorkPosition2" type="text"></td>
+                        <td><input id="pdsWorkCompany2" type="text"></td>
+                        <td><input id="pdsWorkStatus2" type="text"></td>
+                        <td><input id="pdsWorkGovt2" type="text" placeholder="Y/N"></td>
+                      </tr>
+                      <tr>
+                        <td><input id="pdsWorkFrom3" type="text" placeholder="dd/mm/yy"></td>
+                        <td><input id="pdsWorkTo3" type="text" placeholder="dd/mm/yy"></td>
+                        <td><input id="pdsWorkPosition3" type="text"></td>
+                        <td><input id="pdsWorkCompany3" type="text"></td>
+                        <td><input id="pdsWorkStatus3" type="text"></td>
+                        <td><input id="pdsWorkGovt3" type="text" placeholder="Y/N"></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </fieldset>
+
+              <fieldset class="pds-fieldset pds-section-hidden" id="pdsSection6">
+                <legend>VI. Voluntary Work</legend>
+                <p class="pds-section-note">VI. VOLUNTARY WORK OR INVOLVEMENT IN CIVIC / NON-GOVERNMENT / PEOPLE / VOLUNTARY ORGANIZATION/S</p>
+                <div class="pds-voluntary-work-table-wrap">
+                  <table class="pds-voluntary-work-table">
+                    <thead>
+                      <tr>
+                        <th>NAME & ADDRESS OF ORGANIZATION (Write in full)</th>
+                        <th colspan="2">INCLUSIVE DATES (dd/mm/yyyy)</th>
+                        <th>NUMBER OF HOURS</th>
+                        <th>POSITION / NATURE OF WORK</th>
+                      </tr>
+                      <tr>
+                        <th></th>
+                        <th>From</th>
+                        <th>To</th>
+                        <th></th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><input id="pdsVolOrg1" type="text"></td>
+                        <td><input id="pdsVolFrom1" type="text" placeholder="dd/mm/yyyy"></td>
+                        <td><input id="pdsVolTo1" type="text" placeholder="dd/mm/yyyy"></td>
+                        <td><input id="pdsVolHours1" type="text"></td>
+                        <td><input id="pdsVolPosition1" type="text"></td>
+                      </tr>
+                      <tr>
+                        <td><input id="pdsVolOrg2" type="text"></td>
+                        <td><input id="pdsVolFrom2" type="text" placeholder="dd/mm/yyyy"></td>
+                        <td><input id="pdsVolTo2" type="text" placeholder="dd/mm/yyyy"></td>
+                        <td><input id="pdsVolHours2" type="text"></td>
+                        <td><input id="pdsVolPosition2" type="text"></td>
+                      </tr>
+                      <tr>
+                        <td><input id="pdsVolOrg3" type="text"></td>
+                        <td><input id="pdsVolFrom3" type="text" placeholder="dd/mm/yyyy"></td>
+                        <td><input id="pdsVolTo3" type="text" placeholder="dd/mm/yyyy"></td>
+                        <td><input id="pdsVolHours3" type="text"></td>
+                        <td><input id="pdsVolPosition3" type="text"></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </fieldset>
+
+              <fieldset class="pds-fieldset pds-section-hidden" id="pdsSection7">
+                <legend>VII. Other Information</legend>
+                
+                <!-- Items 31-33 in three-column layout -->
+                <div class="pds-other-info-table-wrap">
+                  <table class="pds-other-info-table">
+                    <tr>
+                      <td class="pds-other-info-cell">
+                        <div class="pds-other-info-label">31. SPECIAL SKILLS and HOBBIES</div>
+                        <textarea id="pdsSkills" rows="4" class="pds-other-info-textarea"></textarea>
+                      </td>
+                      <td class="pds-other-info-cell">
+                        <div class="pds-other-info-label">32. NON-ACADEMIC DISTINCTIONS / RECOGNITION<br><span>(Write in full)</span></div>
+                        <textarea id="pdsDistinctions" rows="4" class="pds-other-info-textarea"></textarea>
+                      </td>
+                      <td class="pds-other-info-cell">
+                        <div class="pds-other-info-label">33. MEMBERSHIP IN ASSOCIATION/ORGANIZATION<br><span>(Write in full)</span></div>
+                        <textarea id="pdsOrganizationMembership" rows="4" class="pds-other-info-textarea"></textarea>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+
+                <!-- Items 34-40 Questions -->
+                <div class="pds-questions-section">
+                  
+                  <div class="pds-question-item">
+                    <div class="pds-question-text">Are you related by consanguinity or affinity to the appointing or recommending authority, or to the chief of bureau or office or to the person who has immediate supervision over you in the Office, Bureau or Department where you will be appointed,</div>
+                    <div class="pds-sub-question">
+                      <label>a. within the third degree?</label>
+                      <div class="pds-yes-no">
+                        <label>YES <input type="checkbox" id="pdsQ34a_yes" onchange="handleCheckbox('pdsQ34a_yes', 'pdsQ34a_no')"></label>
+                        <label>NO <input type="checkbox" id="pdsQ34a_no" onchange="handleCheckbox('pdsQ34a_no', 'pdsQ34a_yes')"></label>
+                      </div>
+                    </div>
+                    <div class="pds-sub-question">
+                      <label>b. within the fourth degree (for Local Government Unit - Career Employees)?</label>
+                      <div class="pds-yes-no">
+                        <label>YES <input type="checkbox" id="pdsQ34b_yes" onchange="handleCheckbox('pdsQ34b_yes', 'pdsQ34b_no')"></label>
+                        <label>NO <input type="checkbox" id="pdsQ34b_no" onchange="handleCheckbox('pdsQ34b_no', 'pdsQ34b_yes')"></label>
+                      </div>
+                      <div class="pds-detail-field" id="pdsQ34b_details"><label>If YES, give details:</label><input type="text" id="pdsQ34b_detail"></div>
+                    </div>
+                  </div>
+
+                  <div class="pds-question-item">
+                    <div class="pds-question-text">Have you ever been found guilty of any administrative offense?</div>
+                    <div class="pds-yes-no">
+                      <label>YES <input type="checkbox" id="pdsQ35a_yes" onchange="handleCheckbox('pdsQ35a_yes', 'pdsQ35a_no')"></label>
+                      <label>NO <input type="checkbox" id="pdsQ35a_no" onchange="handleCheckbox('pdsQ35a_no', 'pdsQ35a_yes')"></label>
+                    </div>
+                    <div class="pds-detail-field" id="pdsQ35a_details"><label>If YES, give details:</label><input type="text" id="pdsQ35a_detail"></div>
+                  </div>
+
+                  <div class="pds-question-item">
+                    <div class="pds-question-text">Have you been criminally charged before any court?</div>
+                    <div class="pds-yes-no">
+                      <label>YES <input type="checkbox" id="pdsQ35b_yes" onchange="handleCheckbox('pdsQ35b_yes', 'pdsQ35b_no')"></label>
+                      <label>NO <input type="checkbox" id="pdsQ35b_no" onchange="handleCheckbox('pdsQ35b_no', 'pdsQ35b_yes')"></label>
+                    </div>
+                    <div class="pds-detail-field" id="pdsQ35b_details"><label>If YES, give details:</label><input type="text" id="pdsQ35b_detail"></div>
+                  </div>
+
+                  <div class="pds-question-item">
+                    <div class="pds-question-text">Have you ever been convicted of any crime or violation of any law, decree, ordinance or regulation by any court or tribunal?</div>
+                    <div class="pds-yes-no">
+                      <label>YES <input type="checkbox" id="pdsQ36_yes" onchange="handleCheckbox('pdsQ36_yes', 'pdsQ36_no')"></label>
+                      <label>NO <input type="checkbox" id="pdsQ36_no" onchange="handleCheckbox('pdsQ36_no', 'pdsQ36_yes')"></label>
+                    </div>
+                    <div class="pds-detail-field" id="pdsQ36_details"><label>If YES, give details:</label><input type="text" id="pdsQ36_detail"></div>
+                  </div>
+
+                  <div class="pds-question-item">
+                    <div class="pds-question-text">Have you ever been separated from the service in any of the following modes: resignation, retirement, dropped from the rolls, dismissal, termination, end of term, finished contract or phased out (abolition) in the public or private sector?</div>
+                    <div class="pds-yes-no">
+                      <label>YES <input type="checkbox" id="pdsQ37_yes" onchange="handleCheckbox('pdsQ37_yes', 'pdsQ37_no')"></label>
+                      <label>NO <input type="checkbox" id="pdsQ37_no" onchange="handleCheckbox('pdsQ37_no', 'pdsQ37_yes')"></label>
+                    </div>
+                    <div class="pds-detail-field" id="pdsQ37_details"><label>If YES, give details (END OF CONTRACT):</label><input type="text" id="pdsQ37_detail"></div>
+                  </div>
+
+                  <div class="pds-question-item">
+                    <div class="pds-question-text">Have you ever been a candidate in a national or local election held within the last year (except Barangay election)?</div>
+                    <div class="pds-yes-no">
+                      <label>YES <input type="checkbox" id="pdsQ38a_yes" onchange="handleCheckbox('pdsQ38a_yes', 'pdsQ38a_no')"></label>
+                      <label>NO <input type="checkbox" id="pdsQ38a_no" onchange="handleCheckbox('pdsQ38a_no', 'pdsQ38a_yes')"></label>
+                    </div>
+                    <div class="pds-detail-field" id="pdsQ38a_details"><label>If YES, give details:</label><input type="text" id="pdsQ38a_detail"></div>
+                  </div>
+
+                  <div class="pds-question-item">
+                    <div class="pds-question-text">Have you resigned from the government service during the three (3)-month period before the last election to promote/actively campaign for a national or local candidate?</div>
+                    <div class="pds-yes-no">
+                      <label>YES <input type="checkbox" id="pdsQ38b_yes" onchange="handleCheckbox('pdsQ38b_yes', 'pdsQ38b_no')"></label>
+                      <label>NO <input type="checkbox" id="pdsQ38b_no" onchange="handleCheckbox('pdsQ38b_no', 'pdsQ38b_yes')"></label>
+                    </div>
+                    <div class="pds-detail-field" id="pdsQ38b_details"><label>If YES, give details:</label><input type="text" id="pdsQ38b_detail"></div>
+                  </div>
+
+                  <div class="pds-question-item">
+                    <div class="pds-question-text">Have you acquired the status of an immigrant or permanent resident of another country?</div>
+                    <div class="pds-yes-no">
+                      <label>YES <input type="checkbox" id="pdsQ39_yes" onchange="handleCheckbox('pdsQ39_yes', 'pdsQ39_no')"></label>
+                      <label>NO <input type="checkbox" id="pdsQ39_no" onchange="handleCheckbox('pdsQ39_no', 'pdsQ39_yes')"></label>
+                    </div>
+                    <div class="pds-detail-field" id="pdsQ39_details"><label>If YES, give details (country):</label><input type="text" id="pdsQ39_detail"></div>
+                  </div>
+
+                  <div class="pds-question-item">
+                    <div class="pds-question-text">Pursuant to: (a) Indigenous People's Act (RA 8371); (b) Magna Carta for Disabled Persons (RA 7277, as amended); and (c) Expanded Solo Parents Welfare Act (RA 11861), please answer the following items:</div>
+                    
+                    <div class="pds-sub-question">
+                      <label>a. Are you a member of any indigenous group?</label>
+                      <div class="pds-yes-no">
+                        <label>YES <input type="checkbox" id="pdsQ40a_yes" onchange="handleCheckbox('pdsQ40a_yes', 'pdsQ40a_no')"></label>
+                        <label>NO <input type="checkbox" id="pdsQ40a_no" onchange="handleCheckbox('pdsQ40a_no', 'pdsQ40a_yes')"></label>
+                      </div>
+                      <div class="pds-detail-field" id="pdsQ40a_details"><label>If YES, please specify:</label><input type="text" id="pdsQ40a_detail"></div>
+                    </div>
+
+                    <div class="pds-sub-question">
+                      <label>b. Are you a person with disability?</label>
+                      <div class="pds-yes-no">
+                        <label>YES <input type="checkbox" id="pdsQ40b_yes" onchange="handleCheckbox('pdsQ40b_yes', 'pdsQ40b_no')"></label>
+                        <label>NO <input type="checkbox" id="pdsQ40b_no" onchange="handleCheckbox('pdsQ40b_no', 'pdsQ40b_yes')"></label>
+                      </div>
+                      <div class="pds-detail-field" id="pdsQ40b_details"><label>If YES, please specify ID No.:</label><input type="text" id="pdsQ40b_detail"></div>
+                    </div>
+
+                    <div class="pds-sub-question">
+                      <label>c. Are you a solo parent?</label>
+                      <div class="pds-yes-no">
+                        <label>YES <input type="checkbox" id="pdsQ40c_yes" onchange="handleCheckbox('pdsQ40c_yes', 'pdsQ40c_no')"></label>
+                        <label>NO <input type="checkbox" id="pdsQ40c_no" onchange="handleCheckbox('pdsQ40c_no', 'pdsQ40c_yes')"></label>
+                      </div>
+                      <div class="pds-detail-field" id="pdsQ40c_details"><label>If YES, please specify ID No.:</label><input type="text" id="pdsQ40c_detail"></div>
+                    </div>
+                  </div>
+
+                  <div class="pds-references-section">
+                    <h3>41. REFERENCES (Person not related by consanguinity or affinity to applicant/appointee)</h3>
+                    <table class="pds-reference-table">
+                      <thead>
+                        <tr>
+                          <th>NAME</th>
+                          <th>OFFICE / RESIDENTIAL ADDRESS</th>
+                          <th>CONTACT NO. / EMAIL</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td><input type="text" id="pdsRef1_name" placeholder="Full Name"></td>
+                          <td><input type="text" id="pdsRef1_address" placeholder="Office/Residential Address"></td>
+                          <td><input type="text" id="pdsRef1_contact" placeholder="Contact No. / Email"></td>
+                        </tr>
+                        <tr>
+                          <td><input type="text" id="pdsRef2_name" placeholder="Full Name"></td>
+                          <td><input type="text" id="pdsRef2_address" placeholder="Office/Residential Address"></td>
+                          <td><input type="text" id="pdsRef2_contact" placeholder="Contact No. / Email"></td>
+                        </tr>
+                        <tr>
+                          <td><input type="text" id="pdsRef3_name" placeholder="Full Name"></td>
+                          <td><input type="text" id="pdsRef3_address" placeholder="Office/Residential Address"></td>
+                          <td><input type="text" id="pdsRef3_contact" placeholder="Contact No. / Email"></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <div class="pds-declaration">
+                      <p>I declare under oath that I have personally accomplished this Personal Data Sheet which is a true, correct, and complete statement pursuant to the provisions of pertinent laws, rules, and regulations of the Republic of the Philippines. I authorize the agency head/authorized representative to verify/validate the contents stated herein. I agree that any misrepresentation made in this document and its attachments shall cause the filing of administrative/criminal case/s against me.</p>
+                    </div>
+                    <div class="pds-signature-block">
+                      <table class="pds-signature-table">
+                        <tr>
+                          <td class="pds-signature-label">SIGNATURE</td>
+                          <td class="pds-signature-canvas-cell">
+                            <canvas id="pdsFinalSignaturePad" width="680" height="110" aria-label="Final signature pad"></canvas>
+                            <div class="pds-signature-actions">
+                              <button class="btn btn-outline" type="button" onclick="clearFinalSignature()">Clear Signature</button>
+                            </div>
+                            <input id="pdsFinalESignature" type="hidden">
+                          </td>
+                          <td class="pds-signature-date-label">DATE</td>
+                          <td class="pds-signature-date-value">
+                            <input id="pdsFinalSignatureDate" type="date">
+                          </td>
+                        </tr>
+                      </table>
+                    </div>
+                  </div>
+
+                </div>
+              </fieldset>
+
+              <!-- Shared section navigation -->
+              <div class="pds-section-navigation" id="pdsGlobalSectionNavigation">
+                <button class="btn btn-outline" type="button" onclick="prevPdsSection()" id="pdsBtnPrevious">Previous</button>
+                <button class="btn btn-primary" type="button" onclick="nextPdsSection()" id="pdsBtnNext">Next</button>
               </div>
+
+              <div class="pds-actions pds-actions-bottom-right" id="pdsFinalActions">
+                <button class="btn btn-outline" type="button" onclick="resetPdsForm()">Reset Form</button>
+                <button class="btn btn-primary" type="submit">Save PDS</button>
+              </div>
+
               <div id="pdsMessage" class="message"></div>
             </form>
           </div>

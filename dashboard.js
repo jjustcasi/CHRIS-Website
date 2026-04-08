@@ -7,6 +7,8 @@ let pdsData = {};
 let currentUser = null;
 let signaturePadCtx = null;
 let isSignatureDrawing = false;
+let finalSignaturePadCtx = null;
+let isFinalSignatureDrawing = false;
 
 function getUsers() {
   return JSON.parse(localStorage.getItem('chris_users') || '[]');
@@ -77,6 +79,7 @@ function initializeDashboard() {
   renderAttendance();
   renderAnnouncements();
   renderOverview();
+  initializePdsSections();
   loadPdsForm();
 }
 
@@ -132,6 +135,14 @@ function showPage(page) {
   document.getElementById('leaveBtn').classList.toggle('active', page === 'leave');
   document.getElementById('trainingBtn').classList.toggle('active', page === 'training');
   document.getElementById('pdsBtn').classList.toggle('active', page === 'pds');
+}
+
+function handleCheckbox(checkedId, uncheckedId) {
+  const checkedEl = document.getElementById(checkedId);
+  const uncheckedEl = document.getElementById(uncheckedId);
+  if (checkedEl && checkedEl.checked && uncheckedEl) {
+    uncheckedEl.checked = false;
+  }
 }
 
 const pdsFieldIds = [
@@ -236,12 +247,32 @@ const pdsFieldIds = [
   'pdsGradGradYear',
   'pdsGradHonors',
   'pdsCivilService',
+  'pdsCivilType1', 'pdsCivilRating1', 'pdsCivilDate1', 'pdsCivilPlace1', 'pdsCivilLicense1Number', 'pdsCivilLicense1ValidUntil',
+  'pdsCivilType2', 'pdsCivilRating2', 'pdsCivilDate2', 'pdsCivilPlace2', 'pdsCivilLicense2Number', 'pdsCivilLicense2ValidUntil',
+  'pdsCivilType3', 'pdsCivilRating3', 'pdsCivilDate3', 'pdsCivilPlace3', 'pdsCivilLicense3Number', 'pdsCivilLicense3ValidUntil',
+  'pdsWorkFrom1', 'pdsWorkTo1', 'pdsWorkPosition1', 'pdsWorkCompany1', 'pdsWorkStatus1', 'pdsWorkGovt1',
+  'pdsWorkFrom2', 'pdsWorkTo2', 'pdsWorkPosition2', 'pdsWorkCompany2', 'pdsWorkStatus2', 'pdsWorkGovt2',
+  'pdsWorkFrom3', 'pdsWorkTo3', 'pdsWorkPosition3', 'pdsWorkCompany3', 'pdsWorkStatus3', 'pdsWorkGovt3',
+  'pdsVolOrg1', 'pdsVolFrom1', 'pdsVolTo1', 'pdsVolHours1', 'pdsVolPosition1',
+  'pdsVolOrg2', 'pdsVolFrom2', 'pdsVolTo2', 'pdsVolHours2', 'pdsVolPosition2',
+  'pdsVolOrg3', 'pdsVolFrom3', 'pdsVolTo3', 'pdsVolHours3', 'pdsVolPosition3',
   'pdsWorkExperience',
   'pdsVoluntaryWork',
-  'pdsLearningDevelopment',
   'pdsSkills',
-  'pdsMembership'
-  ,
+  'pdsDistinctions',
+  'pdsOrganizationMembership',
+  'pdsQ34a_yes', 'pdsQ34a_no', 'pdsQ34b_yes', 'pdsQ34b_no', 'pdsQ34b_detail',
+  'pdsQ35a_yes', 'pdsQ35a_no', 'pdsQ35a_detail',
+  'pdsQ35b_yes', 'pdsQ35b_no', 'pdsQ35b_detail',
+  'pdsQ36_yes', 'pdsQ36_no', 'pdsQ36_detail',
+  'pdsQ37_yes', 'pdsQ37_no', 'pdsQ37_detail',
+  'pdsQ38a_yes', 'pdsQ38a_no', 'pdsQ38a_detail',
+  'pdsQ38b_yes', 'pdsQ38b_no', 'pdsQ38b_detail',
+  'pdsQ39_yes', 'pdsQ39_no', 'pdsQ39_detail',
+  'pdsQ40a_yes', 'pdsQ40a_no', 'pdsQ40a_detail',
+  'pdsQ40b_yes', 'pdsQ40b_no', 'pdsQ40b_detail',
+  'pdsQ40c_yes', 'pdsQ40c_no', 'pdsQ40c_detail',
+  'pdsFinalESignature', 'pdsFinalSignatureDate',
   'pdsESignature',
   'pdsSignatureDate'
 ];
@@ -267,6 +298,124 @@ function inferNameParts(name) {
     pdsFirstName: firstName,
     pdsMiddleName: middleName
   };
+}
+
+let currentPdsSection = 1;
+const totalPdsSections = 7;
+
+function initializePdsSections() {
+  currentPdsSection = 1;
+  showPdsSection(1);
+}
+
+function setupDetailFieldVisibility() {
+  // Map of YES checkbox IDs to their detail field container IDs
+  const detailFieldMappings = {
+    'pdsQ34b_yes': 'pdsQ34b_details',
+    'pdsQ35a_yes': 'pdsQ35a_details',
+    'pdsQ35b_yes': 'pdsQ35b_details',
+    'pdsQ36_yes': 'pdsQ36_details',
+    'pdsQ37_yes': 'pdsQ37_details',
+    'pdsQ38a_yes': 'pdsQ38a_details',
+    'pdsQ38b_yes': 'pdsQ38b_details',
+    'pdsQ39_yes': 'pdsQ39_details',
+    'pdsQ40a_yes': 'pdsQ40a_details',
+    'pdsQ40b_yes': 'pdsQ40b_details',
+    'pdsQ40c_yes': 'pdsQ40c_details'
+  };
+
+  // Set up listeners for each mapping
+  Object.entries(detailFieldMappings).forEach(([yesCheckboxId, detailFieldId]) => {
+    const yesCheckbox = document.getElementById(yesCheckboxId);
+    const detailField = document.getElementById(detailFieldId);
+    
+    if (yesCheckbox && detailField) {
+      // Initial state based on checkbox
+      detailField.style.display = yesCheckbox.checked ? 'block' : 'none';
+      
+      // Add change listener
+      yesCheckbox.addEventListener('change', function() {
+        detailField.style.display = this.checked ? 'block' : 'none';
+      });
+    }
+  });
+}
+
+function showPdsSection(sectionNumber) {
+  // Hide all sections
+  for (let i = 1; i <= totalPdsSections; i++) {
+    const section = document.getElementById(`pdsSection${i}`);
+    if (section) {
+      section.classList.add('pds-section-hidden');
+    }
+  }
+  
+  // Show the current section
+  const currentSection = document.getElementById(`pdsSection${sectionNumber}`);
+  if (currentSection) {
+    currentSection.classList.remove('pds-section-hidden');
+  }
+
+  // Update next/previous visibility
+  const btnPrev = document.getElementById('pdsBtnPrevious');
+  const btnNext = document.getElementById('pdsBtnNext');
+  const finalActions = document.getElementById('pdsFinalActions');
+
+  if (btnPrev) {
+    btnPrev.style.display = sectionNumber === 1 ? 'none' : 'inline-flex';
+  }
+
+  if (btnNext) {
+    btnNext.style.display = sectionNumber === totalPdsSections ? 'none' : 'inline-flex';
+  }
+
+  if (finalActions) {
+    finalActions.style.display = sectionNumber === totalPdsSections ? 'flex' : 'none';
+  }
+
+  // Update progress bar
+  updatePdsProgress(sectionNumber);
+  
+  // Setup detail field visibility for section 7 (Other Information)
+  if (sectionNumber === 7) {
+    setupDetailFieldVisibility();
+  }
+  
+  currentPdsSection = sectionNumber;
+}
+
+function updatePdsProgress(sectionNumber) {
+  // Update progress bar fill
+  const progressFill = document.getElementById('pdsProgressFill');
+  if (progressFill) {
+    const progressPercentage = (sectionNumber / totalPdsSections) * 100;
+    progressFill.style.width = `${progressPercentage}%`;
+  }
+  
+  // Update step indicators
+  const steps = document.querySelectorAll('.pds-step');
+  steps.forEach((step, index) => {
+    const stepNumber = index + 1;
+    step.classList.remove('active', 'completed');
+    
+    if (stepNumber < sectionNumber) {
+      step.classList.add('completed');
+    } else if (stepNumber === sectionNumber) {
+      step.classList.add('active');
+    }
+  });
+}
+
+function nextPdsSection() {
+  if (currentPdsSection < totalPdsSections) {
+    showPdsSection(currentPdsSection + 1);
+  }
+}
+
+function prevPdsSection() {
+  if (currentPdsSection > 1) {
+    showPdsSection(currentPdsSection - 1);
+  }
 }
 
 function loadPdsForm() {
@@ -299,6 +448,7 @@ function loadPdsForm() {
   hydrateStructuredAddressFields();
   hydrateFamilyStructuredFields();
   initializeSignaturePad();
+  initializeFinalSignaturePad();
 }
 
 function initializeSignaturePad() {
@@ -335,8 +485,55 @@ function initializeSignaturePad() {
   }
 }
 
+function initializeFinalSignaturePad() {
+  const canvas = document.getElementById('pdsFinalSignaturePad');
+  const hiddenSignature = document.getElementById('pdsFinalESignature');
+  if (!canvas || !hiddenSignature) return;
+
+  if (!finalSignaturePadCtx) {
+    finalSignaturePadCtx = canvas.getContext('2d');
+    finalSignaturePadCtx.lineCap = 'round';
+    finalSignaturePadCtx.lineJoin = 'round';
+    finalSignaturePadCtx.strokeStyle = '#111827';
+    finalSignaturePadCtx.lineWidth = 2;
+  }
+
+  if (!canvas.dataset.boundFinal) {
+    canvas.addEventListener('pointerdown', startFinalSignatureStroke);
+    canvas.addEventListener('pointermove', drawFinalSignatureStroke);
+    canvas.addEventListener('pointerup', endFinalSignatureStroke);
+    canvas.addEventListener('pointerleave', endFinalSignatureStroke);
+    canvas.addEventListener('pointercancel', endFinalSignatureStroke);
+    canvas.dataset.boundFinal = 'true';
+  }
+
+  finalSignaturePadCtx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (hiddenSignature.value) {
+    const image = new Image();
+    image.onload = () => {
+      finalSignaturePadCtx.clearRect(0, 0, canvas.width, canvas.height);
+      finalSignaturePadCtx.drawImage(image, 0, 0, canvas.width, canvas.height);
+    };
+    image.src = hiddenSignature.value;
+  }
+}
+
 function getSignaturePoint(event) {
   const canvas = document.getElementById('pdsSignaturePad');
+  if (!canvas) return { x: 0, y: 0 };
+
+  const rect = canvas.getBoundingClientRect();
+  if (!rect.width || !rect.height) return { x: 0, y: 0 };
+
+  return {
+    x: (event.clientX - rect.left) * (canvas.width / rect.width),
+    y: (event.clientY - rect.top) * (canvas.height / rect.height)
+  };
+}
+
+function getFinalSignaturePoint(event) {
+  const canvas = document.getElementById('pdsFinalSignaturePad');
   if (!canvas) return { x: 0, y: 0 };
 
   const rect = canvas.getBoundingClientRect();
@@ -382,12 +579,55 @@ function endSignatureStroke(event) {
   event.preventDefault();
 }
 
+function startFinalSignatureStroke(event) {
+  if (!finalSignaturePadCtx) return;
+  const canvas = document.getElementById('pdsFinalSignaturePad');
+  if (!canvas) return;
+
+  isFinalSignatureDrawing = true;
+  canvas.setPointerCapture(event.pointerId);
+  const point = getFinalSignaturePoint(event);
+  finalSignaturePadCtx.beginPath();
+  finalSignaturePadCtx.moveTo(point.x, point.y);
+  event.preventDefault();
+}
+
+function drawFinalSignatureStroke(event) {
+  if (!isFinalSignatureDrawing || !finalSignaturePadCtx) return;
+  const point = getFinalSignaturePoint(event);
+  finalSignaturePadCtx.lineTo(point.x, point.y);
+  finalSignaturePadCtx.stroke();
+  event.preventDefault();
+}
+
+function endFinalSignatureStroke(event) {
+  if (!isFinalSignatureDrawing || !finalSignaturePadCtx) return;
+  isFinalSignatureDrawing = false;
+  finalSignaturePadCtx.closePath();
+
+  const canvas = document.getElementById('pdsFinalSignaturePad');
+  const hiddenSignature = document.getElementById('pdsFinalESignature');
+  if (!canvas || !hiddenSignature) return;
+
+  hiddenSignature.value = canvas.toDataURL('image/png');
+  event.preventDefault();
+}
+
 function clearPdsSignature() {
   const canvas = document.getElementById('pdsSignaturePad');
   const hiddenSignature = document.getElementById('pdsESignature');
   if (!canvas || !hiddenSignature || !signaturePadCtx) return;
 
   signaturePadCtx.clearRect(0, 0, canvas.width, canvas.height);
+  hiddenSignature.value = '';
+}
+
+function clearFinalSignature() {
+  const canvas = document.getElementById('pdsFinalSignaturePad');
+  const hiddenSignature = document.getElementById('pdsFinalESignature');
+  if (!canvas || !hiddenSignature || !finalSignaturePadCtx) return;
+
+  finalSignaturePadCtx.clearRect(0, 0, canvas.width, canvas.height);
   hiddenSignature.value = '';
 }
 
@@ -728,6 +968,7 @@ function savePds() {
 function resetPdsForm() {
   pdsData = {};
   saveUserData();
+  initializePdsSections();
   loadPdsForm();
   showPdsMessage('PDS form reset. Default account details were reloaded.', true);
 }
@@ -1322,3 +1563,6 @@ if (!document.querySelector('style[data-notif-animations]')) {
   `;
   document.head.appendChild(style);
 }
+
+// Initialize dashboard when DOM is loaded
+document.addEventListener('DOMContentLoaded', initializeDashboard);
