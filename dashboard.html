@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body onload="initializeDashboard()">
+  <div id="employeeNotificationContainer" class="floating-notifications"></div>
   <header class="topbar">
     <div class="topbar-inner">
       <a class="brand" href="dashboard.html">CHRIS Website</a>
@@ -31,8 +32,14 @@
       <aside class="sidebar">
         <h2>Dashboard</h2>
         <button onclick="showPage('overview')" class="menu-btn active" id="overviewBtn">Overview</button>
+        <button onclick="showPage('announcements')" class="menu-btn" id="announcementsBtn">
+          Announcements
+          <span id="announcementsBadge" style="background: #ef4444; color: white; padding: 2px 6px; border-radius: 12px; font-size: 0.8rem; margin-left: 6px; display: none;">0</span>
+        </button>
         <button onclick="showPage('leave')" class="menu-btn" id="leaveBtn">Request Leave</button>
         <button onclick="showPage('training')" class="menu-btn" id="trainingBtn">Training & Development</button>
+        <button onclick="showPage('report')" class="menu-btn" id="reportBtn">Reports</button>
+        <button onclick="showPage('performance')" class="menu-btn" id="performanceBtn">Performance</button>
         <button onclick="showPage('pds')" class="menu-btn" id="pdsBtn">PDS Form</button>
       </aside>
 
@@ -45,10 +52,14 @@
         <div id="overviewPage">
           <h2></h2>
 
-          <div class="card">
-            <h3>Announcement Board</h3>
-            <p class="form-note">Company announcements are posted by HR/Admin.</p>
-            <div id="announcementBoard" class="announcement-board"></div>
+          <div class="card" id="employeeOnboardingHint">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;">
+              <div>
+                <h3 style="margin:0 0 6px;">Quick Start Guide</h3>
+                <p class="form-note" style="margin:0;">1) Check announcements, 2) review leave balance, 3) submit requests, 4) monitor approvals in Leave History.</p>
+              </div>
+              <button class="btn btn-outline" type="button" onclick="dismissEmployeeHint()">Got it</button>
+            </div>
           </div>
 
           <div class="overview-grid">
@@ -110,6 +121,25 @@
                 <h4 id="attendanceAbsentCount">0</h4>
               </div>
             </div>
+          </div>
+        </div>
+
+        <div id="announcementsPage" class="hidden">
+          <h2>Announcements</h2>
+          <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+              <div>
+                <h3 style="margin:0 0 4px;">What's New</h3>
+                <p class="form-note" style="margin:0;">Unread announcement updates.</p>
+              </div>
+              <button class="btn btn-outline" type="button" onclick="clearUnreadAnnouncements()">Clear All</button>
+            </div>
+            <div id="announcementUnreadBoard" class="announcement-board"></div>
+          </div>
+          <div class="card">
+            <h3>Company Announcement Module</h3>
+            <p class="form-note">Read full announcement details, including attached images.</p>
+            <div id="announcementModuleBoard" class="announcement-board"></div>
           </div>
         </div>
 
@@ -228,6 +258,50 @@
           </div>
         </div>
 
+        <div id="reportPage" class="hidden">
+          <h2>Reports</h2>
+          <div class="card">
+            <h3>Employee Report Generator</h3>
+            <p class="form-note">Create a summary report with current leaves, training, attendance, and evaluation metrics.</p>
+            <button class="btn btn-primary" type="button" onclick="generateUserReport()">Generate Report</button>
+            <div id="reportOutput" style="margin-top: 18px; min-height: 120px; padding: 18px; background: #f8fafc; border-radius: 12px;"></div>
+          </div>
+          <div class="card">
+            <h3>Report Preview</h3>
+            <div id="reportPreview" style="min-height: 200px; padding: 18px; background: #fff; border-radius: 12px; border: 1px solid #e2e8f0;"></div>
+          </div>
+        </div>
+
+        <div id="performancePage" class="hidden">
+          <h2>Performance</h2>
+          <div class="card">
+            <h3>Performance Summary</h3>
+            <p class="form-note">View your latest metrics and progress at a glance.</p>
+            <div class="overview-grid">
+              <div class="metric-card">
+                <p class="metric-label">Attendance Rate</p>
+                <h3 id="performanceAttendanceRate">0%</h3>
+              </div>
+              <div class="metric-card">
+                <p class="metric-label">Training Completed</p>
+                <h3 id="performanceTrainingCompleted">0</h3>
+              </div>
+              <div class="metric-card">
+                <p class="metric-label">Leave Requests</p>
+                <h3 id="performanceLeaveCount">0</h3>
+              </div>
+              <div class="metric-card">
+                <p class="metric-label">Evaluation Status</p>
+                <h3 id="performanceEvaluationStatus">Not available</h3>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Recent Activity</h3>
+            <div id="performanceActivities" style="min-height: 180px; padding: 18px; background: #f8fafc; border-radius: 12px;"></div>
+          </div>
+        </div>
+
         <div id="pdsPage" class="hidden">
           <h2>Personal Data Sheet (PDS)</h2>
           <div class="card">
@@ -258,9 +332,20 @@
                   <span class="pds-step-number">3</span>
                   <span class="pds-step-label">Education</span>
                 </div>
+                <div class="pds-step" data-step="4">
+                  <span class="pds-step-number">4</span>
+                  <span class="pds-step-label">Civil Service</span>
+                </div>
+                <div class="pds-step" data-step="5">
+                  <span class="pds-step-number">5</span>
+                  <span class="pds-step-label">Work Experience</span>
+                </div>
+                <div class="pds-step" data-step="6">
+                  <span class="pds-step-number">6</span>
+                  <span class="pds-step-label">Voluntary Work</span>
+                </div>
                 <div class="pds-step" data-step="7">
                   <span class="pds-step-number">7</span>
-
                   <span class="pds-step-label">Other Info</span>
                 </div>
               </div>
@@ -272,11 +357,11 @@
                 <table class="pds-name-table">
                   <tr>
                     <td class="pds-name-label">1. SURNAME</td>
-                    <td class="pds-name-value" colspan="3"><input id="pdsSurname" type="text"></td>
+                    <td class="pds-name-value" colspan="3"><input id="pdsSurname" type="text" data-required="true"></td>
                   </tr>
                   <tr>
                     <td class="pds-name-label">2. FIRST NAME</td>
-                    <td class="pds-name-value"><input id="pdsFirstName" type="text"></td>
+                    <td class="pds-name-value"><input id="pdsFirstName" type="text" data-required="true"></td>
                     <td class="pds-name-ext-label">NAME EXTENSION (JR., SR)</td>
                     <td class="pds-name-ext-value"><input id="pdsNameExtension" type="text" placeholder="N/A"></td>
                   </tr>
@@ -290,11 +375,11 @@
                   <div class="pds-sheet-left">
                     <div class="pds-sheet-row">
                       <div class="pds-sheet-label">3. DATE OF BIRTH <span>(dd/mm/yyyy)</span></div>
-                      <div class="pds-sheet-value"><input id="pdsDob" type="text" placeholder="dd/mm/yyyy"></div>
+                      <div class="pds-sheet-value"><input id="pdsDob" type="date" data-required="true"></div>
                     </div>
                     <div class="pds-sheet-row">
                       <div class="pds-sheet-label">4. PLACE OF BIRTH</div>
-                      <div class="pds-sheet-value"><input id="pdsPlaceOfBirth" type="text"></div>
+                      <div class="pds-sheet-value"><input id="pdsPlaceOfBirth" type="text" data-required="true"></div>
                     </div>
                     <div class="pds-sheet-row">
                       <div class="pds-sheet-label">5. SEX AT BIRTH</div>
@@ -385,26 +470,26 @@
                     <div class="pds-sheet-row pds-address-row">
                       <div class="pds-sheet-label">17. RESIDENTIAL ADDRESS</div>
                       <div class="pds-sheet-value pds-address-grid">
-                        <div><input id="pdsResidentialHouseLot" type="text"><small>House/Block/Lot No.</small></div>
-                        <div><input id="pdsResidentialStreet" type="text"><small>Street</small></div>
+                        <div><input id="pdsResidentialHouseLot" type="text" data-required="true"><small>House/Block/Lot No.</small></div>
+                        <div><input id="pdsResidentialStreet" type="text" data-required="true"><small>Street</small></div>
                         <div><input id="pdsResidentialSubdivision" type="text"><small>Subdivision/Village</small></div>
-                        <div><input id="pdsResidentialBarangay" type="text"><small>Barangay</small></div>
-                        <div><input id="pdsResidentialCity" type="text"><small>City/Municipality</small></div>
-                        <div><input id="pdsResidentialProvince" type="text"><small>Province</small></div>
-                        <div class="pds-zip-wrap"><label for="pdsResidentialZip">ZIP CODE</label><input id="pdsResidentialZip" type="text"></div>
+                        <div><input id="pdsResidentialBarangay" type="text" data-required="true"><small>Barangay</small></div>
+                        <div><input id="pdsResidentialCity" type="text" data-required="true"><small>City/Municipality</small></div>
+                        <div><input id="pdsResidentialProvince" type="text" data-required="true"><small>Province</small></div>
+                        <div class="pds-zip-wrap"><label for="pdsResidentialZip">ZIP CODE</label><input id="pdsResidentialZip" type="text" data-required="true"></div>
                       </div>
                     </div>
 
                     <div class="pds-sheet-row pds-address-row">
                       <div class="pds-sheet-label">18. PERMANENT ADDRESS</div>
                       <div class="pds-sheet-value pds-address-grid">
-                        <div><input id="pdsPermanentHouseLot" type="text"><small>House/Block/Lot No.</small></div>
-                        <div><input id="pdsPermanentStreet" type="text"><small>Street</small></div>
+                        <div><input id="pdsPermanentHouseLot" type="text" data-required="true"><small>House/Block/Lot No.</small></div>
+                        <div><input id="pdsPermanentStreet" type="text" data-required="true"><small>Street</small></div>
                         <div><input id="pdsPermanentSubdivision" type="text"><small>Subdivision/Village</small></div>
-                        <div><input id="pdsPermanentBarangay" type="text"><small>Barangay</small></div>
-                        <div><input id="pdsPermanentCity" type="text"><small>City/Municipality</small></div>
-                        <div><input id="pdsPermanentProvince" type="text"><small>Province</small></div>
-                        <div class="pds-zip-wrap"><label for="pdsPermanentZip">ZIP CODE</label><input id="pdsPermanentZip" type="text"></div>
+                        <div><input id="pdsPermanentBarangay" type="text" data-required="true"><small>Barangay</small></div>
+                        <div><input id="pdsPermanentCity" type="text" data-required="true"><small>City/Municipality</small></div>
+                        <div><input id="pdsPermanentProvince" type="text" data-required="true"><small>Province</small></div>
+                        <div class="pds-zip-wrap"><label for="pdsPermanentZip">ZIP CODE</label><input id="pdsPermanentZip" type="text" data-required="true"></div>
                       </div>
                       <input id="pdsResidentialAddress" type="hidden">
                       <input id="pdsPermanentAddress" type="hidden">
@@ -445,25 +530,25 @@
                       </div>
                     </td>
                     <td class="pds-family-value"><input id="pdsChild1Name" type="text"></td>
-                    <td class="pds-family-value"><input id="pdsChild1Dob" type="text" placeholder="dd/mm/yyyy"></td>
+                    <td class="pds-family-value"><input id="pdsChild1Dob" type="date"></td>
                   </tr>
                   <tr>
                     <td class="pds-family-label">MIDDLE NAME</td>
                     <td class="pds-family-value"><input id="pdsSpouseMiddleName" type="text"></td>
                     <td class="pds-family-value"><input id="pdsChild2Name" type="text"></td>
-                    <td class="pds-family-value"><input id="pdsChild2Dob" type="text" placeholder="dd/mm/yyyy"></td>
+                    <td class="pds-family-value"><input id="pdsChild2Dob" type="date"></td>
                   </tr>
                   <tr>
                     <td class="pds-family-label">OCCUPATION</td>
                     <td class="pds-family-value"><input id="pdsSpouseOccupation" type="text"></td>
                     <td class="pds-family-value"><input id="pdsChild3Name" type="text"></td>
-                    <td class="pds-family-value"><input id="pdsChild3Dob" type="text" placeholder="dd/mm/yyyy"></td>
+                    <td class="pds-family-value"><input id="pdsChild3Dob" type="date"></td>
                   </tr>
                   <tr>
                     <td class="pds-family-label">EMPLOYER/BUSINESS NAME</td>
                     <td class="pds-family-value"><input id="pdsSpouseEmployer" type="text"></td>
                     <td class="pds-family-value"><input id="pdsChild4Name" type="text"></td>
-                    <td class="pds-family-value"><input id="pdsChild4Dob" type="text" placeholder="dd/mm/yyyy"></td>
+                    <td class="pds-family-value"><input id="pdsChild4Dob" type="date"></td>
                   </tr>
                   <tr>
                     <td class="pds-family-label">BUSINESS ADDRESS</td>
@@ -1001,6 +1086,7 @@
     </div>
   </section>
 
+<script src="auth.js"></script>
 <script src="dashboard.js"></script>
 </body>
 </html>

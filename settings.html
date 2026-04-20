@@ -26,6 +26,12 @@
       <p>Update your account details for this front-end portal.</p>
 
       <form class="form" onsubmit="event.preventDefault(); saveSettings();">
+        <div>
+          <label for="profileImage">Profile Picture</label>
+          <div id="profileImagePreview" style="margin: 8px 0 10px; width: 56px; height: 56px; display: grid; place-items: center;"></div>
+          <input id="profileImage" type="file" accept="image/*">
+        </div>
+
         <div class="settings-grid">
           <div>
             <label for="fullName">Full Name</label>

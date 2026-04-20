@@ -1,0 +1,60 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "Admin User",
+      "surname": "Admin",
+      "firstName": "Admin",
+      "middleName": "",
+      "suffix": "",
+      "email": "admin@chris.com",
+      "birthday": "2000-01-01",
+      "password": "$2a$10$Yuh7cMjGDnMhleh/jEntGeBlwimuwZWvIaHNGKM83biBJ7BxBqht2",
+      "gender": "Other",
+      "role": "admin",
+      "google": false
+    },
+    {
+      "id": 2,
+      "name": "CASEY BATACAN DOMINGO N/A",
+      "surname": "DOMINGO",
+      "firstName": "CASEY",
+      "middleName": "BATACAN",
+      "suffix": "N/A",
+      "email": "cdomingo@chris.com",
+      "birthday": "2004-07-12",
+      "password": "$2a$10$7qTydDrqYBr/c347sRuyHuf.BJRyaXfrWRTFPZ9f1m6GVP2P716Oe",
+      "gender": "Female",
+      "role": "employee",
+      "google": false
+    }
+  ],
+  "userProfiles": [],
+  "announcements": [],
+  "leaves": [],
+  "attendance": [],
+  "trainings": [
+    {
+      "id": 1776664052671,
+      "employeeEmail": "cdomingo@chris.com",
+      "title": "dsadas",
+      "startDate": "2026-04-21",
+      "endDate": "2026-04-24",
+      "hours": 8,
+      "type": "Supervisory",
+      "sponsor": "dasdasd",
+      "status": "Assigned",
+      "start": "2026-04-21",
+      "end": "2026-04-24"
+    }
+  ],
+  "evaluations": [
+    {
+      "employeeEmail": "cdomingo@chris.com",
+      "status": "",
+      "updatedAt": "2026-04-20T06:18:35.994Z"
+    }
+  ],
+  "leaveComments": [],
+  "auditLogs": []
+}

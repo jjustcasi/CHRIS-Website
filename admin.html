@@ -14,32 +14,19 @@
     <div class="topbar-inner">
       <a class="brand" href="index.html">CHRIS Admin</a>
       <div class="nav-actions">
+        <div class="profile-chip" id="adminProfileChip">
+          <span class="profile-avatar" id="adminProfileAvatar">A</span>
+          <span class="profile-meta">
+            <strong id="adminProfileName">Admin</strong>
+            <small>Administrator</small>
+          </span>
+        </div>
         <button id="adminLogoutBtn" class="btn btn-danger hidden" onclick="adminLogout()">Logout</button>
       </div>
     </div>
   </header>
 
   <main>
-    <section id="adminLoginSection" class="auth-layout">
-      <div class="auth-card">
-        <h2>Admin Login</h2>
-        <p>Use admin credentials to manage employee data.</p>
-        <form class="form" onsubmit="event.preventDefault(); adminLogin();">
-          <div>
-            <label for="adminEmail">Admin Email</label>
-            <input id="adminEmail" type="email" placeholder="admin@chris.local" required>
-          </div>
-          <div>
-            <label for="adminPassword">Password</label>
-            <input id="adminPassword" type="password" placeholder="admin123" required>
-          </div>
-          <button class="btn btn-primary" type="submit">Login as Admin</button>
-        </form>
-        <p class="form-note">Default demo credentials: admin@chris.local / admin123</p>
-        <div id="adminAuthMessage" class="message"></div>
-      </div>
-    </section>
-
     <section id="adminDashboardSection" class="hidden">
       <!-- Notification Area -->
       <div id="notificationContainer" style="position: fixed; top: 80px; right: 20px; z-index: 1000; max-width: 400px;"></div>
@@ -50,6 +37,7 @@
           <aside class="sidebar">
             <h2>Admin Portal</h2>
             <button onclick="showAdminPage('overview')" class="menu-btn active" id="overviewBtn">Overview</button>
+            <button onclick="showAdminPage('announcements')" class="menu-btn" id="announcementsBtn">Announcements</button>
             <button onclick="showAdminPage('leaves')" class="menu-btn" id="leavesBtn">
               Leave Monitoring
               <span id="pendingBadge" style="background: #ff4444; color: white; padding: 2px 6px; border-radius: 12px; font-size: 0.8rem; margin-left: 6px; display: none;"></span>
@@ -57,11 +45,6 @@
             <button onclick="showAdminPage('employees')" class="menu-btn" id="employeesBtn">Employee Management</button>
             <button onclick="showAdminPage('civhr')" class="menu-btn" id="civhrBtn">CivHR Personal Data Sheet</button>
             <button onclick="showAdminPage('training')" class="menu-btn" id="trainingBtn">Schooling/Training Monitoring</button>
-            <a href="index.html" class="btn btn-outline" style="width:100%;margin-top:6px">Back to Home</a>
-            <div class="user-box">
-              Admin Portal<br>
-              <strong>CHRIS System</strong>
-            </div>
           </aside>
 
           <!-- Main Content Area -->
@@ -73,7 +56,32 @@
                 <p>Manage employees and leave requests</p>
               </div>
 
+              <div class="card" id="adminOnboardingHint">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;">
+                  <div>
+                    <h3 style="margin:0 0 6px;">Admin Workflow Tip</h3>
+                    <p class="form-note" style="margin:0;">Review pending leaves first, publish key announcements, then check summary reports and audit logs.</p>
+                  </div>
+                  <button class="btn btn-outline" type="button" onclick="dismissAdminHint()">Got it</button>
+                </div>
+              </div>
+
               <h2>Admin Dashboard</h2>
+
+              <div class="card" style="margin-bottom: 16px;">
+                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
+                  <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                    <label for="overviewDepartmentFilter" style="font-weight:600;">Department</label>
+                    <select id="overviewDepartmentFilter" onchange="refreshOverviewInsights()" style="padding: 8px; border: 1px solid #ddd; border-radius: 8px; min-width: 180px;">
+                      <option value="">All Departments</option>
+                    </select>
+                  </div>
+                  <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <button class="btn btn-outline" onclick="printEmployeeReport()">Print Employee Report</button>
+                    <button class="btn btn-primary" onclick="printHrSummaryReport()">Print HR Summary</button>
+                  </div>
+                </div>
+              </div>
 
               <!-- Metrics Cards -->
               <div class="overview-grid">
@@ -91,6 +99,16 @@
                   <p class="metric-label">Total Approved Leaves</p>
                   <h3 id="approvedLeavesCount">0</h3>
                   <p class="metric-sub">This period</p>
+                </div>
+                <div class="metric-card">
+                  <p class="metric-label">Upcoming Trainings</p>
+                  <h3 id="upcomingTrainingsCount">0</h3>
+                  <p class="metric-sub">Scheduled in selected range</p>
+                </div>
+                <div class="metric-card">
+                  <p class="metric-label">Attendance Trend</p>
+                  <h3 id="attendanceTrendRate">0%</h3>
+                  <p class="metric-sub" id="attendanceTrendMeta">Present rate</p>
                 </div>
               </div>
 
@@ -134,6 +152,44 @@
                     <tbody></tbody>
                   </table>
                 </div>
+              </div>
+
+              <div class="card">
+                <h3>Admin Activity Audit Logs</h3>
+                <p class="form-note">Track key admin actions for governance and accountability.</p>
+                <div class="table-wrap">
+                  <table id="adminAuditTable">
+                    <thead>
+                      <tr>
+                        <th>Time</th>
+                        <th>Admin</th>
+                        <th>Action</th>
+                        <th>Target</th>
+                        <th>Details</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+
+            <div id="announcementPage" class="hidden">
+              <div class="welcome-banner">
+                <h2>Announcements</h2>
+                <p>Create and manage company announcements.</p>
+              </div>
+
+              <div class="card">
+                <h3>Announcement Manager</h3>
+                <div class="grid-2">
+                  <input id="adminAnnouncementTitle" placeholder="Title" type="text" style="padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-family: inherit;">
+                  <input id="adminAnnouncementImage" type="file" accept="image/*" style="padding: 10px; border: 1px solid #ddd; border-radius: 10px; font-family: inherit;">
+                </div>
+                <textarea id="adminAnnouncementDescription" placeholder="Description" rows="4" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:10px; font-family:inherit;"></textarea>
+                <button class="btn btn-primary" onclick="addGlobalAnnouncement()">Add Announcement</button>
+                <div id="adminAnnouncementBoard" class="announcement-board"></div>
               </div>
             </div>
 
@@ -190,6 +246,24 @@
 
               <!-- Employee Selector -->
               <div class="card">
+                <h3>Employee Directory</h3>
+                <p class="form-note">Search employees by name, email, department, or position.</p>
+                <input id="employeeDirectorySearch" type="text" placeholder="Search employees..." oninput="renderEmployeeDirectory()" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; width: 100%; max-width: 500px; font-family: inherit; margin-bottom: 12px;">
+                <div class="table-wrap" style="margin-bottom: 18px;">
+                  <table id="employeeDirectoryTable">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Department</th>
+                        <th>Position</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+
                 <h3>Select Employee</h3>
                 <p class="form-note">Choose an employee to view and manage their records.</p>
                 <select id="employeeSelect" onchange="selectEmployee()" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; width: 100%; max-width: 400px; font-family: inherit;"></select>
@@ -260,13 +334,6 @@
                 <button class="btn btn-primary" onclick="saveEmployeeEvaluation()">Save Rating</button>
               </div>
 
-              <!-- Announcement Section -->
-              <div class="card">
-                <h3>Company Announcements</h3>
-                <input id="adminAnnouncementInput" placeholder="Post a company announcement..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; font-family: inherit;">
-                <button class="btn btn-primary" onclick="addGlobalAnnouncement()">Post Announcement</button>
-                <div id="adminAnnouncementBoard" class="announcement-board" style="margin-top: 20px;"></div>
-              </div>
             </div>
 
             <!-- CivHR Personal Data Sheet Page -->
@@ -305,6 +372,25 @@
 
               <div class="card">
                 <h3>Training Records</h3>
+                <p class="form-note">Assign training to the selected employee.</p>
+                <div class="grid-2" style="margin-bottom: 10px;">
+                  <input id="adminTrainingTitle" placeholder="Training title" type="text">
+                  <input id="adminTrainingSponsor" placeholder="Sponsor" type="text">
+                </div>
+                <div class="grid-2" style="margin-bottom: 10px;">
+                  <input id="adminTrainingStart" type="date">
+                  <input id="adminTrainingEnd" type="date">
+                </div>
+                <div class="grid-2" style="margin-bottom: 14px;">
+                  <input id="adminTrainingHours" type="number" min="0" placeholder="Hours">
+                  <select id="adminTrainingType">
+                    <option>Technical</option>
+                    <option>Supervisory</option>
+                    <option>Compliance</option>
+                    <option>Managerial</option>
+                  </select>
+                </div>
+                <button class="btn btn-primary" onclick="assignTrainingToEmployee()" style="margin-bottom: 14px;">Assign Training</button>
                 <div class="table-wrap">
                   <table id="adminTrainingTable">
                     <thead>
@@ -314,6 +400,8 @@
                         <th>Hours</th>
                         <th>Type</th>
                         <th>Sponsor</th>
+                        <th>Status</th>
+                        <th>Action</th>
                       </tr>
                     </thead>
                     <tbody></tbody>
@@ -347,6 +435,7 @@
     </div>
   </main>
 
+<script src="auth.js"></script>
 <script src="admin.js"></script>
 </body>
 </html>

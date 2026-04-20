@@ -9,6 +9,12 @@ let signaturePadCtx = null;
 let isSignatureDrawing = false;
 let finalSignaturePadCtx = null;
 let isFinalSignatureDrawing = false;
+let previousSnapshot = {
+  leaveStatuses: {},
+  trainingIds: [],
+  announcementIds: [],
+};
+let hasPreviousSnapshot = false;
 
 function getUsers() {
   return JSON.parse(localStorage.getItem('chris_users') || '[]');
@@ -26,30 +32,265 @@ function userDataKey(type) {
   return 'chris_' + type + '_' + currentUser.email;
 }
 
-function loadUserData() {
-  leaves = JSON.parse(localStorage.getItem(userDataKey('leaves')) || '[]');
-  trainings = JSON.parse(localStorage.getItem(userDataKey('trainings')) || '[]');
-  attendance = JSON.parse(localStorage.getItem(userDataKey('attendance')) || '[]');
-  announcements = JSON.parse(localStorage.getItem('chris_global_announcements') || '[]');
-  evaluation = JSON.parse(localStorage.getItem(userDataKey('evaluation')) || '{"status":""}');
+function getReadAnnouncementIds() {
+  try {
+    const ids = JSON.parse(localStorage.getItem(userDataKey('announcement_read_ids')) || '[]');
+    return Array.isArray(ids) ? ids : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+function saveReadAnnouncementIds(ids) {
+  localStorage.setItem(userDataKey('announcement_read_ids'), JSON.stringify(ids));
+}
+
+function getUnreadAnnouncements() {
+  const readIds = new Set(getReadAnnouncementIds().map(Number));
+  return (announcements || []).filter(item => !readIds.has(Number(item.id)));
+}
+
+function updateAnnouncementsBadge(unreadCount) {
+  const badge = document.getElementById('announcementsBadge');
+  if (!badge) return;
+  const count = Number(unreadCount) || 0;
+  if (count > 0) {
+    badge.textContent = String(count);
+    badge.style.display = 'inline-block';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function markAnnouncementRead(announcementId) {
+  const id = Number(announcementId);
+  if (!id) return;
+  const currentIds = new Set(getReadAnnouncementIds().map(Number));
+  if (currentIds.has(id)) return;
+
+  currentIds.add(id);
+  saveReadAnnouncementIds(Array.from(currentIds));
+
+  const item = (announcements || []).find(a => Number(a.id) === id);
+  if (item) {
+    const title = item.title || 'Announcement';
+    showLeaveNotification(`Announcement marked as read: ${title}`, 'success', 3000);
+  }
+
+  renderAnnouncementUnreadPanel();
+}
+
+function clearUnreadAnnouncements() {
+  const allIds = (announcements || []).map(item => Number(item.id)).filter(Number.isFinite);
+  saveReadAnnouncementIds(allIds);
+  renderAnnouncementUnreadPanel();
+  showLeaveNotification('All announcements marked as read.', 'info', 3200);
+}
+
+function renderAnnouncementUnreadPanel() {
+  const unreadItems = getUnreadAnnouncements();
+  updateAnnouncementsBadge(unreadItems.length);
+
+  const board = document.getElementById('announcementUnreadBoard');
+  if (!board) return;
+  board.innerHTML = '';
+
+  if (!unreadItems.length) {
+    board.innerHTML = '<p class="form-note">You are all caught up.</p>';
+    return;
+  }
+
+  unreadItems.forEach(item => {
+    const block = document.createElement('div');
+    block.className = 'announcement-item announcement-unread-item';
+
+    const title = item.title || item.text || 'Announcement';
+    const row = document.createElement('div');
+    row.style.display = 'flex';
+    row.style.justifyContent = 'space-between';
+    row.style.alignItems = 'flex-start';
+    row.style.gap = '10px';
+    row.style.flexWrap = 'wrap';
+
+    const info = document.createElement('div');
+    info.innerHTML = `<strong>${title}</strong><p class="form-note">Posted: ${item.date || '-'}</p>`;
+
+    const button = document.createElement('button');
+    button.className = 'btn btn-outline';
+    button.type = 'button';
+    button.textContent = 'Mark Read';
+    button.onclick = () => markAnnouncementRead(item.id);
+
+    row.appendChild(info);
+    row.appendChild(button);
+    block.appendChild(row);
+    board.appendChild(block);
+  });
+}
+
+function loadPreviousSnapshot() {
+  try {
+    const raw = localStorage.getItem(userDataKey('notification_state'));
+    if (!raw) {
+      hasPreviousSnapshot = false;
+      return { leaveStatuses: {}, trainingIds: [], announcementIds: [] };
+    }
+    const parsed = JSON.parse(raw);
+    hasPreviousSnapshot = true;
+    return {
+      leaveStatuses: parsed.leaveStatuses || {},
+      trainingIds: Array.isArray(parsed.trainingIds) ? parsed.trainingIds : [],
+      announcementIds: Array.isArray(parsed.announcementIds) ? parsed.announcementIds : [],
+    };
+  } catch (_) {
+    hasPreviousSnapshot = false;
+    return { leaveStatuses: {}, trainingIds: [], announcementIds: [] };
+  }
+}
+
+function saveCurrentSnapshot() {
+  const next = {
+    leaveStatuses: Object.fromEntries((leaves || []).map(item => [String(item.id), item.status || 'Pending'])),
+    trainingIds: (trainings || []).map(item => Number(item.id)).filter(Number.isFinite),
+    announcementIds: (announcements || []).map(item => Number(item.id)).filter(Number.isFinite),
+  };
+  previousSnapshot = next;
+  localStorage.setItem(userDataKey('notification_state'), JSON.stringify(next));
+}
+
+function notifyDashboardReminders() {
+  const previous = previousSnapshot || { leaveStatuses: {}, trainingIds: [], announcementIds: [] };
+  const currentLeaveStatuses = Object.fromEntries((leaves || []).map(item => [String(item.id), item.status || 'Pending']));
+
+  if (!hasPreviousSnapshot) {
+    return;
+  }
+
+  (leaves || []).forEach((item) => {
+    const prevStatus = previous.leaveStatuses[String(item.id)];
+    if (!prevStatus) return;
+    if (prevStatus !== item.status && item.status === 'Approved') {
+      showLeaveNotification(`Leave approval notice: Your ${item.type} request (${item.start} to ${item.end}) was approved.`, 'success', 5500);
+    }
+    if (prevStatus !== item.status && item.status === 'Rejected') {
+      showLeaveNotification(`Leave update: Your ${item.type} request was marked as rejected.`, 'error', 5500);
+    }
+  });
+
+  const previousTrainingIds = new Set(previous.trainingIds || []);
+  (trainings || []).forEach((item) => {
+    const trainingId = Number(item.id);
+    if (!trainingId || previousTrainingIds.has(trainingId)) return;
+    showLeaveNotification(`Training assignment notice: ${item.title} has been assigned to you.`, 'info', 5500);
+  });
+
+  previousSnapshot = {
+    leaveStatuses: currentLeaveStatuses,
+    trainingIds: (trainings || []).map(item => Number(item.id)).filter(Number.isFinite),
+    announcementIds: (announcements || []).map(item => Number(item.id)).filter(Number.isFinite),
+  };
+  localStorage.setItem(userDataKey('notification_state'), JSON.stringify(previousSnapshot));
+}
+
+async function refreshUserReminders() {
+  await loadUserData();
+  renderAnnouncements();
+  renderAnnouncementModule();
+  updateAnnouncementsBadge(getUnreadAnnouncements().length);
+  renderOverview();
+  notifyDashboardReminders();
+  saveCurrentSnapshot();
+}
+
+function dismissEmployeeHint() {
+  localStorage.setItem(userDataKey('hint_dismissed'), '1');
+  const hint = document.getElementById('employeeOnboardingHint');
+  if (hint) hint.classList.add('hidden');
+}
+
+function hydrateEmployeeHint() {
+  const hint = document.getElementById('employeeOnboardingHint');
+  if (!hint) return;
+  const dismissed = localStorage.getItem(userDataKey('hint_dismissed')) === '1';
+  hint.classList.toggle('hidden', dismissed);
+}
+
+async function loadUserData() {
   pdsData = JSON.parse(localStorage.getItem(userDataKey('pds')) || '{}');
+
+  leaves = [];
+  trainings = [];
+  attendance = [];
+  announcements = [];
+  evaluation = { status: '' };
+
+  try {
+    const snapshotRes = await fetch('/api/hr/snapshot?email=' + encodeURIComponent(currentUser.email));
+    const data = await snapshotRes.json();
+    if (data.success && data.snapshot) {
+      leaves = Array.isArray(data.snapshot.leaves) ? data.snapshot.leaves : [];
+      trainings = Array.isArray(data.snapshot.trainings) ? data.snapshot.trainings : [];
+      attendance = Array.isArray(data.snapshot.attendance) ? data.snapshot.attendance : [];
+      evaluation = data.snapshot.evaluation || { status: '' };
+    }
+  } catch (_) {
+    // Keep defaults when snapshot endpoint is unavailable.
+  }
+
+  try {
+    const announcementsRes = await fetch('/api/hr/announcements?visibleOnly=1');
+    const announcementData = await announcementsRes.json();
+    announcements = announcementData.success && Array.isArray(announcementData.items) ? announcementData.items : [];
+  } catch (_) {
+    // Keep defaults when announcements endpoint is unavailable.
+  }
+
+  try {
+    const profileRes = await fetch('/api/users/profile?email=' + encodeURIComponent(currentUser.email));
+    const profileData = await profileRes.json();
+    if (profileData.success && profileData.profile) {
+      currentUser = {
+        ...currentUser,
+        ...profileData.profile,
+      };
+    }
+  } catch (_) {
+    // Use session/local profile info when profile endpoint is unavailable.
+  }
 }
 
 function saveUserData() {
-  localStorage.setItem(userDataKey('leaves'), JSON.stringify(leaves));
-  localStorage.setItem(userDataKey('trainings'), JSON.stringify(trainings));
-  localStorage.setItem(userDataKey('attendance'), JSON.stringify(attendance));
-  localStorage.setItem(userDataKey('evaluation'), JSON.stringify(evaluation));
+  fetch('/api/hr/snapshot', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      email: currentUser.email,
+      leaves,
+      trainings,
+      attendance,
+      evaluation,
+    })
+  }).catch(() => {
+    // Keep UI responsive even if sync fails.
+  });
+
   localStorage.setItem(userDataKey('pds'), JSON.stringify(pdsData));
 }
 
 function requireLogin() {
   const sessionEmail = getSession();
+  const role = getUserRole();
   if (!sessionEmail) {
     window.location.href = 'login.html';
     return false;
   }
-  const user = getUsers().find(u => u.email === sessionEmail);
+  if (role === 'admin') {
+    window.location.href = 'admin.html';
+    return false;
+  }
+
+  const normalizedEmail = String(sessionEmail || '').toLowerCase();
+  const user = getUsers().find(u => String(u.email || '').toLowerCase() === normalizedEmail);
   if (!user) {
     clearSession();
     window.location.href = 'login.html';
@@ -59,18 +300,28 @@ function requireLogin() {
     name: user.name,
     email: user.email,
     position: user.position || 'CHR Employee',
-    gender: user.gender || ''
+    gender: user.gender || '',
+    role: role || user.role || 'employee'
   };
   return true;
 }
 
-function initializeDashboard() {
+async function initializeDashboard() {
   if (!requireLogin()) return;
+  previousSnapshot = loadPreviousSnapshot();
   document.getElementById('profileName').textContent = currentUser.name;
-  document.getElementById('profileAvatar').textContent = getInitials(currentUser.name);
+  const avatarEl = document.getElementById('profileAvatar');
+  if (currentUser.profileImage) {
+    avatarEl.innerHTML = '<img src="' + currentUser.profileImage + '" alt="Profile" class="profile-pic">';
+  } else {
+    avatarEl.textContent = getInitials(currentUser.name);
+  }
   document.getElementById('welcomeName').textContent = currentUser.name;
   document.getElementById('welcomePosition').textContent = currentUser.position;
-  loadUserData();
+  await loadUserData();
+  if (currentUser.profileImage) {
+    avatarEl.innerHTML = '<img src="' + currentUser.profileImage + '" alt="Profile" class="profile-pic">';
+  }
   seedUserSideDefaults();
   populateLeaveTypeDropdown();
   showPage('overview');
@@ -78,7 +329,16 @@ function initializeDashboard() {
   renderTraining();
   renderAttendance();
   renderAnnouncements();
+  renderAnnouncementModule();
+  updateAnnouncementsBadge(getUnreadAnnouncements().length);
   renderOverview();
+  hydrateEmployeeHint();
+  notifyDashboardReminders();
+  saveCurrentSnapshot();
+  hasPreviousSnapshot = true;
+  setInterval(() => {
+    refreshUserReminders().catch(() => {});
+  }, 30000);
   initializePdsSections();
   loadPdsForm();
 }
@@ -119,22 +379,125 @@ function toggleMedicalCertField() {
 
 function logout() {
   clearSession();
-  window.location.href = 'login.html';
+  window.location.href = 'index.html';
 }
 
 function showPage(page) {
   document.getElementById('overviewPage').classList.toggle('hidden', page !== 'overview');
+  document.getElementById('announcementsPage').classList.toggle('hidden', page !== 'announcements');
   document.getElementById('leavePage').classList.toggle('hidden', page !== 'leave');
   document.getElementById('trainingPage').classList.toggle('hidden', page !== 'training');
+  document.getElementById('reportPage').classList.toggle('hidden', page !== 'report');
+  document.getElementById('performancePage').classList.toggle('hidden', page !== 'performance');
   document.getElementById('pdsPage').classList.toggle('hidden', page !== 'pds');
   const welcomeBanner = document.querySelector('.welcome-banner');
   if (welcomeBanner) {
     welcomeBanner.classList.toggle('hidden', page !== 'overview');
   }
   document.getElementById('overviewBtn').classList.toggle('active', page === 'overview');
+  document.getElementById('announcementsBtn').classList.toggle('active', page === 'announcements');
   document.getElementById('leaveBtn').classList.toggle('active', page === 'leave');
   document.getElementById('trainingBtn').classList.toggle('active', page === 'training');
+  document.getElementById('reportBtn').classList.toggle('active', page === 'report');
+  document.getElementById('performanceBtn').classList.toggle('active', page === 'performance');
   document.getElementById('pdsBtn').classList.toggle('active', page === 'pds');
+
+  if (page === 'announcements') {
+    renderAnnouncementModule();
+  }
+
+  if (page === 'report') {
+    renderReportPage();
+  }
+  if (page === 'performance') {
+    renderPerformancePage();
+  }
+}
+
+function renderReportPage() {
+  const reportPreview = document.getElementById('reportPreview');
+  const reportOutput = document.getElementById('reportOutput');
+  if (!reportPreview || !reportOutput) return;
+
+  const pendingLeaves = leaves.filter(l => l.status === 'Pending').length;
+  const approvedLeaves = leaves.filter(l => l.status === 'Approved').length;
+  const completedTrainings = trainings.filter(t => t.status === 'Completed').length;
+  const presentCount = attendance.filter(item => item.status === 'Present').length;
+  const absentCount = attendance.filter(item => item.status === 'Absent').length;
+  const lateCount = attendance.filter(item => item.status === 'Late').length;
+
+  reportPreview.innerHTML = `
+    <p><strong>Name:</strong> ${currentUser.name}</p>
+    <p><strong>Email:</strong> ${currentUser.email}</p>
+    <p><strong>Position:</strong> ${currentUser.position}</p>
+    <p><strong>Approved leaves:</strong> ${approvedLeaves}</p>
+    <p><strong>Pending leave requests:</strong> ${pendingLeaves}</p>
+    <p><strong>Training completed:</strong> ${completedTrainings}</p>
+    <p><strong>Attendance (P/L/A):</strong> ${presentCount}/${lateCount}/${absentCount}</p>
+    <p><strong>Evaluation status:</strong> ${evaluation.status || 'Not rated'}</p>
+  `;
+  reportOutput.textContent = 'Press Generate Report to view a printable summary.';
+}
+
+function generateUserReport() {
+  const reportPreview = document.getElementById('reportPreview');
+  const reportOutput = document.getElementById('reportOutput');
+  if (!reportPreview || !reportOutput) return;
+
+  const leaveList = leaves.map(record => `${record.type} (${record.status}) from ${record.startDate} to ${record.endDate}`).join('\n') || 'No leave records available.';
+  const trainingList = trainings.map(record => `${record.title} — ${record.status || 'Pending'} (${record.hours}h)`).join('\n') || 'No training records available.';
+  const attendanceSummary = attendance.length ? attendance.map(record => `${record.date}: ${record.status}`).join('\n') : 'No attendance activity logged.';
+
+  reportOutput.innerHTML = `<pre style="white-space: pre-wrap; line-height: 1.4;">Employee Report for ${currentUser.name}
+
+Position: ${currentUser.position}
+Email: ${currentUser.email}
+Evaluation: ${evaluation.status || 'Not rated'}
+
+Leave History:
+${leaveList}
+
+Training Summary:
+${trainingList}
+
+Attendance Details:
+${attendanceSummary}
+</pre>`;
+  reportPreview.innerHTML = '<p>Report generated successfully.</p>';
+}
+
+function renderPerformancePage() {
+  const attendanceRateEl = document.getElementById('performanceAttendanceRate');
+  const trainingCompletedEl = document.getElementById('performanceTrainingCompleted');
+  const leaveCountEl = document.getElementById('performanceLeaveCount');
+  const evaluationStatusEl = document.getElementById('performanceEvaluationStatus');
+  const activitiesEl = document.getElementById('performanceActivities');
+
+  if (!attendanceRateEl || !trainingCompletedEl || !leaveCountEl || !evaluationStatusEl || !activitiesEl) return;
+
+  const totalDays = attendance.length || 1;
+  const presentCount = attendance.filter(item => item.status === 'Present').length;
+  const attendancePercent = Math.round((presentCount / totalDays) * 100);
+  const completedTrainings = trainings.filter(t => t.status === 'Completed').length;
+  const requestCount = leaves.length;
+
+  attendanceRateEl.textContent = `${attendancePercent}%`;
+  trainingCompletedEl.textContent = `${completedTrainings}`;
+  leaveCountEl.textContent = `${requestCount}`;
+  evaluationStatusEl.textContent = evaluation.status || 'Pending review';
+
+  const recentActivity = [];
+  if (leaves.length) {
+    recentActivity.push(`<strong>Leave Requests:</strong> ${leaves.slice(-3).map(l => `${l.type} (${l.status})`).join(', ')}`);
+  }
+  if (trainings.length) {
+    recentActivity.push(`<strong>Training:</strong> ${trainings.slice(-3).map(t => `${t.title} (${t.status || 'Pending'})`).join(', ')}`);
+  }
+  if (attendance.length) {
+    recentActivity.push(`<strong>Attendance:</strong> ${attendance.slice(-3).map(a => `${a.date} - ${a.status}`).join(', ')}`);
+  }
+
+  activitiesEl.innerHTML = recentActivity.length ? `<ul>${recentActivity.map(item => `<li>${item}</li>`).join('')}</ul>` : '<p>No recent activity to display.</p>';
 }
 
 function handleCheckbox(checkedId, uncheckedId) {
@@ -356,6 +719,12 @@ function showPdsSection(sectionNumber) {
     currentSection.classList.remove('pds-section-hidden');
   }
 
+  const pdsMessage = document.getElementById('pdsMessage');
+  if (pdsMessage) {
+    pdsMessage.textContent = '';
+    pdsMessage.className = 'message';
+  }
+
   // Update next/previous visibility
   const btnPrev = document.getElementById('pdsBtnPrevious');
   const btnNext = document.getElementById('pdsBtnNext');
@@ -407,6 +776,10 @@ function updatePdsProgress(sectionNumber) {
 }
 
 function nextPdsSection() {
+  if (!validatePdsSection(currentPdsSection)) {
+    return;
+  }
+
   if (currentPdsSection < totalPdsSections) {
     showPdsSection(currentPdsSection + 1);
   }
@@ -416,6 +789,104 @@ function prevPdsSection() {
   if (currentPdsSection > 1) {
     showPdsSection(currentPdsSection - 1);
   }
+}
+
+function showPdsMessage(text, ok = false) {
+  const msg = document.getElementById('pdsMessage');
+  if (!msg) return;
+  msg.textContent = text;
+  msg.className = 'message';
+  msg.classList.add(ok ? 'ok' : 'err');
+}
+
+function clearPdsSectionErrors(sectionNumber) {
+  const section = document.getElementById(`pdsSection${sectionNumber}`);
+  if (!section) return;
+  section.querySelectorAll('.pds-field-error').forEach(el => el.classList.remove('pds-field-error'));
+}
+
+function highlightPdsField(field) {
+  if (!field) return;
+  const wrapper = field.closest('.pds-sheet-value') || field.closest('.pds-family-value') || field;
+  if (wrapper) {
+    wrapper.classList.add('pds-field-error');
+    if (typeof wrapper.scrollIntoView === 'function') {
+      wrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    return;
+  }
+  field.classList.add('pds-field-error');
+}
+
+function validatePdsSection(sectionNumber) {
+  const section = document.getElementById(`pdsSection${sectionNumber}`);
+  if (!section) return true;
+
+  clearPdsSectionErrors(sectionNumber);
+
+  const visibleRequiredFields = Array.from(section.querySelectorAll('[data-required]'));
+  for (const field of visibleRequiredFields) {
+    const value = (field.value || '').trim();
+    if (!value) {
+      const labelText = field.closest('td')?.previousElementSibling?.textContent?.trim() || field.getAttribute('id') || 'required field';
+      showPdsMessage(`Please answer: ${labelText}.`, false);
+      highlightPdsField(field);
+      return false;
+    }
+  }
+
+  const hiddenRequiredBySection = {
+    1: [
+      { id: 'pdsSexAtBirth', label: 'Sex at Birth' },
+      { id: 'pdsCivilStatus', label: 'Civil Status' },
+      { id: 'pdsCitizenship', label: 'Citizenship' }
+    ],
+    4: [
+      { id: 'pdsCivilService', label: 'Civil Service Eligibility' }
+    ],
+    5: [
+      { id: 'pdsWorkExperience', label: 'Work Experience' }
+    ],
+    6: [
+      { id: 'pdsVoluntaryWork', label: 'Voluntary Work' },
+      { id: 'pdsSkills', label: 'Skills' }
+    ],
+    7: [
+      { id: 'pdsFinalESignature', label: 'Final Signature' },
+      { id: 'pdsFinalSignatureDate', label: 'Signature Date' }
+    ]
+  };
+
+  const hiddenRequired = hiddenRequiredBySection[sectionNumber] || [];
+  for (const fieldDef of hiddenRequired) {
+    const field = document.getElementById(fieldDef.id);
+    if (!field) continue;
+    const value = (field.value || '').trim();
+    if (!value) {
+      showPdsMessage(`Please answer: ${fieldDef.label}.`, false);
+      highlightPdsField(field);
+      return false;
+    }
+  }
+
+  if (sectionNumber === 1 && document.getElementById('pdsCitizenship')?.value === 'Dual Citizenship') {
+    const dualFields = [
+      { id: 'pdsDualCitizenshipType', label: 'Dual Citizenship Type' },
+      { id: 'pdsDualCitizenshipCountry', label: 'Dual Citizenship Country' }
+    ];
+    for (const fieldDef of dualFields) {
+      const field = document.getElementById(fieldDef.id);
+      if (!field) continue;
+      const value = (field.value || '').trim();
+      if (!value) {
+        showPdsMessage(`Please answer: ${fieldDef.label}.`, false);
+        highlightPdsField(field);
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 function loadPdsForm() {
@@ -1115,7 +1586,7 @@ function renderLeaves() {
 
 // ============ Employee Leave Details Modal ============
 
-function openEmployeeLeaveDetailsModal(leaveId) {
+async function openEmployeeLeaveDetailsModal(leaveId) {
   const leave = leaves.find(l => l.id === leaveId);
   if (!leave) return;
 
@@ -1133,7 +1604,7 @@ function openEmployeeLeaveDetailsModal(leaveId) {
   `;
 
   // Display admin comments
-  displayEmployeeComments(leaveId);
+  await displayEmployeeComments(leaveId);
 
   // Show modal
   document.getElementById('leaveDetailsModalEmployee').style.display = 'block';
@@ -1181,10 +1652,16 @@ function closeMedicalCertModal() {
   document.getElementById('medicalCertModal').style.display = 'none';
 }
 
-function displayEmployeeComments(leaveId) {
+async function displayEmployeeComments(leaveId) {
   const commentsList = document.getElementById('employeeCommentsList');
-  const key = `chris_comments_${currentUser.email}_${leaveId}`;
-  const comments = JSON.parse(localStorage.getItem(key) || '[]');
+  let comments = [];
+  try {
+    const res = await fetch('/api/hr/leave-comments?email=' + encodeURIComponent(currentUser.email) + '&leaveId=' + encodeURIComponent(leaveId));
+    const data = await res.json();
+    comments = data.success ? (data.items || []) : [];
+  } catch (err) {
+    comments = [];
+  }
 
   if (!comments.length) {
     commentsList.innerHTML = '<p style="color: #999; margin: 0;">No admin comments yet. You\'ll be notified when admin adds notes.</p>';
@@ -1242,6 +1719,7 @@ function addTraining() {
   saveUserData();
   renderTraining();
   renderOverview();
+  saveCurrentSnapshot();
 }
 
 function deleteTraining(id) {
@@ -1249,6 +1727,7 @@ function deleteTraining(id) {
   saveUserData();
   renderTraining();
   renderOverview();
+  saveCurrentSnapshot();
 }
 
 function renderTraining() {
@@ -1297,9 +1776,39 @@ function renderAnnouncements() {
   announcements.forEach(item => {
     const block = document.createElement('div');
     block.className = 'announcement-item';
+    const title = item.title || item.text || 'Announcement';
     block.innerHTML = `
       <div>
-        <strong>${item.text}</strong>
+        <strong>${title}</strong>
+        <p class="form-note">Posted: ${item.date}</p>
+        <button class="btn btn-outline" style="margin-top: 8px;" onclick="showPage('announcements')">Learn more</button>
+      </div>`;
+    board.appendChild(block);
+  });
+}
+
+function renderAnnouncementModule() {
+  const board = document.getElementById('announcementModuleBoard');
+  if (!board) return;
+  board.innerHTML = '';
+
+  renderAnnouncementUnreadPanel();
+
+  if (!announcements.length) {
+    board.innerHTML = '<p class="form-note">No announcements yet.</p>';
+    return;
+  }
+
+  announcements.forEach(item => {
+    const block = document.createElement('div');
+    block.className = 'announcement-item';
+    const title = item.title || item.text || 'Announcement';
+    const description = item.description || '';
+    block.innerHTML = `
+      <div>
+        <strong>${title}</strong>
+        ${description ? `<p style="margin:6px 0 0; color:#475569;">${description}</p>` : '<p style="margin:6px 0 0; color:#475569;">No additional details provided.</p>'}
+        ${item.image ? `<img src="${item.image}" alt="${title}" class="announcement-item-image" style="margin-top:10px;">` : ''}
         <p class="form-note">Posted: ${item.date}</p>
       </div>`;
     board.appendChild(block);
@@ -1489,20 +1998,8 @@ function renderLeaveBalance(leaveQuota, requestedByType) {
 // ============ Employee Notification System ============
 
 function showLeaveNotification(message, type = 'info', duration = 3000) {
-  // Create container if it doesn't exist
   let container = document.getElementById('employeeNotificationContainer');
-  if (!container) {
-    container = document.createElement('div');
-    container.id = 'employeeNotificationContainer';
-    container.style.cssText = `
-      position: fixed;
-      top: 80px;
-      right: 20px;
-      z-index: 1000;
-      max-width: 400px;
-    `;
-    document.body.appendChild(container);
-  }
+  if (!container) return;
 
   const notif = document.createElement('div');
   notif.className = `notification notification-${type}`;
@@ -1564,5 +2061,3 @@ if (!document.querySelector('style[data-notif-animations]')) {
   document.head.appendChild(style);
 }
 
-// Initialize dashboard when DOM is loaded
-document.addEventListener('DOMContentLoaded', initializeDashboard);
