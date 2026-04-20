@@ -2182,6 +2182,34 @@ th{font-size:.86rem;text-transform:uppercase;letter-spacing:.02em;color:#475569}
     margin-top: 0;
   }
 
+  .pds-questions-table{
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #cbd5e1;
+    margin-bottom: 20px;
+  }
+
+  .pds-questions-table tr{
+    border-bottom: 1px solid #cbd5e1;
+  }
+
+  .pds-questions-table tr:last-child{
+    border-bottom: none;
+  }
+
+  .pds-question-col{
+    width: 60%;
+    padding: 16px;
+    vertical-align: top;
+    border-right: 1px solid #cbd5e1;
+  }
+
+  .pds-checkbox-col{
+    width: 40%;
+    padding: 16px;
+    vertical-align: top;
+  }
+
   .pds-education-table{
     min-width:0 !important;
     width:100% !important;

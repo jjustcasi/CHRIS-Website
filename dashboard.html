@@ -722,7 +722,6 @@
                 <div class="pds-civil-service-section">
                   <div class="pds-mini-label">IV. CIVIL SERVICE ELIGIBILITY</div>
                   <div class="pds-mini-cell">
-                    <textarea id="pdsCivilService" rows="3" placeholder="Eligibility, rating, examination date/place, license number"></textarea>
                   </div>
 
                   <div class="pds-civil-service-table-wrap">
@@ -899,119 +898,176 @@
 
                 <!-- Items 34-40 Questions -->
                 <div class="pds-questions-section">
-                  
-                  <div class="pds-question-item">
-                    <div class="pds-question-text">Are you related by consanguinity or affinity to the appointing or recommending authority, or to the chief of bureau or office or to the person who has immediate supervision over you in the Office, Bureau or Department where you will be appointed,</div>
-                    <div class="pds-sub-question">
-                      <label>a. within the third degree?</label>
-                      <div class="pds-yes-no">
-                        <label>YES <input type="checkbox" id="pdsQ34a_yes" onchange="handleCheckbox('pdsQ34a_yes', 'pdsQ34a_no')"></label>
-                        <label>NO <input type="checkbox" id="pdsQ34a_no" onchange="handleCheckbox('pdsQ34a_no', 'pdsQ34a_yes')"></label>
-                      </div>
-                    </div>
-                    <div class="pds-sub-question">
-                      <label>b. within the fourth degree (for Local Government Unit - Career Employees)?</label>
-                      <div class="pds-yes-no">
-                        <label>YES <input type="checkbox" id="pdsQ34b_yes" onchange="handleCheckbox('pdsQ34b_yes', 'pdsQ34b_no')"></label>
-                        <label>NO <input type="checkbox" id="pdsQ34b_no" onchange="handleCheckbox('pdsQ34b_no', 'pdsQ34b_yes')"></label>
-                      </div>
-                      <div class="pds-detail-field" id="pdsQ34b_details"><label>If YES, give details:</label><input type="text" id="pdsQ34b_detail"></div>
-                    </div>
-                  </div>
-
-                  <div class="pds-question-item">
-                    <div class="pds-question-text">Have you ever been found guilty of any administrative offense?</div>
-                    <div class="pds-yes-no">
-                      <label>YES <input type="checkbox" id="pdsQ35a_yes" onchange="handleCheckbox('pdsQ35a_yes', 'pdsQ35a_no')"></label>
-                      <label>NO <input type="checkbox" id="pdsQ35a_no" onchange="handleCheckbox('pdsQ35a_no', 'pdsQ35a_yes')"></label>
-                    </div>
-                    <div class="pds-detail-field" id="pdsQ35a_details"><label>If YES, give details:</label><input type="text" id="pdsQ35a_detail"></div>
-                  </div>
-
-                  <div class="pds-question-item">
-                    <div class="pds-question-text">Have you been criminally charged before any court?</div>
-                    <div class="pds-yes-no">
-                      <label>YES <input type="checkbox" id="pdsQ35b_yes" onchange="handleCheckbox('pdsQ35b_yes', 'pdsQ35b_no')"></label>
-                      <label>NO <input type="checkbox" id="pdsQ35b_no" onchange="handleCheckbox('pdsQ35b_no', 'pdsQ35b_yes')"></label>
-                    </div>
-                    <div class="pds-detail-field" id="pdsQ35b_details"><label>If YES, give details:</label><input type="text" id="pdsQ35b_detail"></div>
-                  </div>
-
-                  <div class="pds-question-item">
-                    <div class="pds-question-text">Have you ever been convicted of any crime or violation of any law, decree, ordinance or regulation by any court or tribunal?</div>
-                    <div class="pds-yes-no">
-                      <label>YES <input type="checkbox" id="pdsQ36_yes" onchange="handleCheckbox('pdsQ36_yes', 'pdsQ36_no')"></label>
-                      <label>NO <input type="checkbox" id="pdsQ36_no" onchange="handleCheckbox('pdsQ36_no', 'pdsQ36_yes')"></label>
-                    </div>
-                    <div class="pds-detail-field" id="pdsQ36_details"><label>If YES, give details:</label><input type="text" id="pdsQ36_detail"></div>
-                  </div>
-
-                  <div class="pds-question-item">
-                    <div class="pds-question-text">Have you ever been separated from the service in any of the following modes: resignation, retirement, dropped from the rolls, dismissal, termination, end of term, finished contract or phased out (abolition) in the public or private sector?</div>
-                    <div class="pds-yes-no">
-                      <label>YES <input type="checkbox" id="pdsQ37_yes" onchange="handleCheckbox('pdsQ37_yes', 'pdsQ37_no')"></label>
-                      <label>NO <input type="checkbox" id="pdsQ37_no" onchange="handleCheckbox('pdsQ37_no', 'pdsQ37_yes')"></label>
-                    </div>
-                    <div class="pds-detail-field" id="pdsQ37_details"><label>If YES, give details (END OF CONTRACT):</label><input type="text" id="pdsQ37_detail"></div>
-                  </div>
-
-                  <div class="pds-question-item">
-                    <div class="pds-question-text">Have you ever been a candidate in a national or local election held within the last year (except Barangay election)?</div>
-                    <div class="pds-yes-no">
-                      <label>YES <input type="checkbox" id="pdsQ38a_yes" onchange="handleCheckbox('pdsQ38a_yes', 'pdsQ38a_no')"></label>
-                      <label>NO <input type="checkbox" id="pdsQ38a_no" onchange="handleCheckbox('pdsQ38a_no', 'pdsQ38a_yes')"></label>
-                    </div>
-                    <div class="pds-detail-field" id="pdsQ38a_details"><label>If YES, give details:</label><input type="text" id="pdsQ38a_detail"></div>
-                  </div>
-
-                  <div class="pds-question-item">
-                    <div class="pds-question-text">Have you resigned from the government service during the three (3)-month period before the last election to promote/actively campaign for a national or local candidate?</div>
-                    <div class="pds-yes-no">
-                      <label>YES <input type="checkbox" id="pdsQ38b_yes" onchange="handleCheckbox('pdsQ38b_yes', 'pdsQ38b_no')"></label>
-                      <label>NO <input type="checkbox" id="pdsQ38b_no" onchange="handleCheckbox('pdsQ38b_no', 'pdsQ38b_yes')"></label>
-                    </div>
-                    <div class="pds-detail-field" id="pdsQ38b_details"><label>If YES, give details:</label><input type="text" id="pdsQ38b_detail"></div>
-                  </div>
-
-                  <div class="pds-question-item">
-                    <div class="pds-question-text">Have you acquired the status of an immigrant or permanent resident of another country?</div>
-                    <div class="pds-yes-no">
-                      <label>YES <input type="checkbox" id="pdsQ39_yes" onchange="handleCheckbox('pdsQ39_yes', 'pdsQ39_no')"></label>
-                      <label>NO <input type="checkbox" id="pdsQ39_no" onchange="handleCheckbox('pdsQ39_no', 'pdsQ39_yes')"></label>
-                    </div>
-                    <div class="pds-detail-field" id="pdsQ39_details"><label>If YES, give details (country):</label><input type="text" id="pdsQ39_detail"></div>
-                  </div>
-
-                  <div class="pds-question-item">
-                    <div class="pds-question-text">Pursuant to: (a) Indigenous People's Act (RA 8371); (b) Magna Carta for Disabled Persons (RA 7277, as amended); and (c) Expanded Solo Parents Welfare Act (RA 11861), please answer the following items:</div>
-                    
-                    <div class="pds-sub-question">
-                      <label>a. Are you a member of any indigenous group?</label>
-                      <div class="pds-yes-no">
-                        <label>YES <input type="checkbox" id="pdsQ40a_yes" onchange="handleCheckbox('pdsQ40a_yes', 'pdsQ40a_no')"></label>
-                        <label>NO <input type="checkbox" id="pdsQ40a_no" onchange="handleCheckbox('pdsQ40a_no', 'pdsQ40a_yes')"></label>
-                      </div>
-                      <div class="pds-detail-field" id="pdsQ40a_details"><label>If YES, please specify:</label><input type="text" id="pdsQ40a_detail"></div>
-                    </div>
-
-                    <div class="pds-sub-question">
-                      <label>b. Are you a person with disability?</label>
-                      <div class="pds-yes-no">
-                        <label>YES <input type="checkbox" id="pdsQ40b_yes" onchange="handleCheckbox('pdsQ40b_yes', 'pdsQ40b_no')"></label>
-                        <label>NO <input type="checkbox" id="pdsQ40b_no" onchange="handleCheckbox('pdsQ40b_no', 'pdsQ40b_yes')"></label>
-                      </div>
-                      <div class="pds-detail-field" id="pdsQ40b_details"><label>If YES, please specify ID No.:</label><input type="text" id="pdsQ40b_detail"></div>
-                    </div>
-
-                    <div class="pds-sub-question">
-                      <label>c. Are you a solo parent?</label>
-                      <div class="pds-yes-no">
-                        <label>YES <input type="checkbox" id="pdsQ40c_yes" onchange="handleCheckbox('pdsQ40c_yes', 'pdsQ40c_no')"></label>
-                        <label>NO <input type="checkbox" id="pdsQ40c_no" onchange="handleCheckbox('pdsQ40c_no', 'pdsQ40c_yes')"></label>
-                      </div>
-                      <div class="pds-detail-field" id="pdsQ40c_details"><label>If YES, please specify ID No.:</label><input type="text" id="pdsQ40c_detail"></div>
-                    </div>
-                  </div>
+                  <table class="pds-questions-table">
+                    <tr>
+                      <td class="pds-question-col">
+                        <div class="pds-question-item">
+                          <div class="pds-question-text"><strong>34.</strong> Are you related by consanguinity or affinity to the appointing or recommending authority, or to the chief of bureau or office or to the person who has immediate supervision over you in the Office, Bureau or Department where you will be appointed,</div>
+                          <div class="pds-sub-question">
+                            <label>a. within the third degree?</label>
+                          </div>
+                          <div class="pds-sub-question">
+                            <label>b. within the fourth degree (for Local Government Unit - Career Employees)?</label>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="pds-checkbox-col">
+                        <div class="pds-sub-question">
+                          <div class="pds-yes-no">
+                            <label>YES <input type="checkbox" id="pdsQ34a_yes" onchange="handleCheckbox('pdsQ34a_yes', 'pdsQ34a_no')"></label>
+                            <label>NO <input type="checkbox" id="pdsQ34a_no" onchange="handleCheckbox('pdsQ34a_no', 'pdsQ34a_yes')"></label>
+                          </div>
+                        </div>
+                        <div class="pds-sub-question">
+                          <div class="pds-yes-no">
+                            <label>YES <input type="checkbox" id="pdsQ34b_yes" onchange="handleCheckbox('pdsQ34b_yes', 'pdsQ34b_no')"></label>
+                            <label>NO <input type="checkbox" id="pdsQ34b_no" onchange="handleCheckbox('pdsQ34b_no', 'pdsQ34b_yes')"></label>
+                          </div>
+                          <div class="pds-detail-field" id="pdsQ34b_details"><label>If YES, give details:</label><input type="text" id="pdsQ34b_detail"></div>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="pds-question-col">
+                        <div class="pds-question-item">
+                          <div class="pds-question-text"><strong>35.</strong> </div>
+                          <div class="pds-sub-question">
+                            <label>a. Have you ever been found guilty of any administrative offense?</label>
+                          </div>
+                          <div class="pds-sub-question">
+                            <label>b. Have you been criminally charged before any court?</label>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="pds-checkbox-col">
+                        <div class="pds-sub-question">
+                          <div class="pds-yes-no">
+                            <label>YES <input type="checkbox" id="pdsQ35a_yes" onchange="handleCheckbox('pdsQ35a_yes', 'pdsQ35a_no')"></label>
+                            <label>NO <input type="checkbox" id="pdsQ35a_no" onchange="handleCheckbox('pdsQ35a_no', 'pdsQ35a_yes')"></label>
+                          </div>
+                          <div class="pds-detail-field" id="pdsQ35a_details"><label>If YES, give details:</label><input type="text" id="pdsQ35a_detail"></div>
+                        </div>
+                        <div class="pds-sub-question">
+                          <div class="pds-yes-no">
+                            <label>YES <input type="checkbox" id="pdsQ35b_yes" onchange="handleCheckbox('pdsQ35b_yes', 'pdsQ35b_no')"></label>
+                            <label>NO <input type="checkbox" id="pdsQ35b_no" onchange="handleCheckbox('pdsQ35b_no', 'pdsQ35b_yes')"></label>
+                          </div>
+                          <div class="pds-detail-field" id="pdsQ35b_details"><label>If YES, give details:</label><input type="text" id="pdsQ35b_detail"><br><label>Date Filed:</label><input type="text" id=""><br><label>Status of Case/s:</label><input type="text" id=""></div>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="pds-question-col">
+                        <div class="pds-question-item">
+                          <div class="pds-question-text"><strong>36.</strong> Have you ever been convicted of any crime or violation of any law, decree, ordinance or regulation by any court or tribunal?</div>
+                        </div>
+                      </td>
+                      <td class="pds-checkbox-col">
+                        <div class="pds-yes-no">
+                          <label>YES <input type="checkbox" id="pdsQ36_yes" onchange="handleCheckbox('pdsQ36_yes', 'pdsQ36_no')"></label>
+                          <label>NO <input type="checkbox" id="pdsQ36_no" onchange="handleCheckbox('pdsQ36_no', 'pdsQ36_yes')"></label>
+                        </div>
+                        <div class="pds-detail-field" id="pdsQ36_details"><label>If YES, give details:</label><input type="text" id="pdsQ36_detail"></div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="pds-question-col">
+                        <div class="pds-question-item">
+                          <div class="pds-question-text"><strong>37.</strong> Have you ever been separated from the service in any of the following modes: resignation, retirement, dropped from the rolls, dismissal, termination, end of term, finished contract or phased out (abolition) in the public or private sector?</div>
+                        </div>
+                      </td>
+                      <td class="pds-checkbox-col">
+                        <div class="pds-yes-no">
+                          <label>YES <input type="checkbox" id="pdsQ37_yes" onchange="handleCheckbox('pdsQ37_yes', 'pdsQ37_no')"></label>
+                          <label>NO <input type="checkbox" id="pdsQ37_no" onchange="handleCheckbox('pdsQ37_no', 'pdsQ37_yes')"></label>
+                        </div>
+                        <div class="pds-detail-field" id="pdsQ37_details"><label>If YES, give details (END OF CONTRACT):</label><input type="text" id="pdsQ37_detail"></div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="pds-question-col">
+                        <div class="pds-question-item">
+                          <div class="pds-question-text"><strong>38.</strong> </div>
+                          <div class="pds-sub-question">
+                            <label>a. Have you ever been a candidate in a national or local election held within the last year (except Barangay election)?</label>
+                          </div>
+                          <div class="pds-sub-question">
+                            <label>b. Have you resigned from the government service during the three (3)-month period before the last election to promote/actively campaign for a national or local candidate?</label>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="pds-checkbox-col">
+                        <div class="pds-sub-question">
+                          <div class="pds-yes-no">
+                            <label>YES <input type="checkbox" id="pdsQ38a_yes" onchange="handleCheckbox('pdsQ38a_yes', 'pdsQ38a_no')"></label>
+                            <label>NO <input type="checkbox" id="pdsQ38a_no" onchange="handleCheckbox('pdsQ38a_no', 'pdsQ38a_yes')"></label>
+                          </div>
+                          <div class="pds-detail-field" id="pdsQ38a_details"><label>If YES, give details:</label><input type="text" id="pdsQ38a_detail"></div>
+                        </div>
+                        <div class="pds-sub-question">
+                          <div class="pds-yes-no">
+                            <label>YES <input type="checkbox" id="pdsQ38b_yes" onchange="handleCheckbox('pdsQ38b_yes', 'pdsQ38b_no')"></label>
+                            <label>NO <input type="checkbox" id="pdsQ38b_no" onchange="handleCheckbox('pdsQ38b_no', 'pdsQ38b_yes')"></label>
+                          </div>
+                          <div class="pds-detail-field" id="pdsQ38b_details"><label>If YES, give details:</label><input type="text" id="pdsQ38b_detail"></div>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="pds-question-col">
+                        <div class="pds-question-item">
+                          <div class="pds-question-text"><strong>39.</strong> Have you acquired the status of an immigrant or permanent resident of another country?</div>
+                        </div>
+                      </td>
+                      <td class="pds-checkbox-col">
+                        <div class="pds-yes-no">
+                          <label>YES <input type="checkbox" id="pdsQ39_yes" onchange="handleCheckbox('pdsQ39_yes', 'pdsQ39_no')"></label>
+                          <label>NO <input type="checkbox" id="pdsQ39_no" onchange="handleCheckbox('pdsQ39_no', 'pdsQ39_yes')"></label>
+                        </div>
+                        <div class="pds-detail-field" id="pdsQ39_details"><label>If YES, give details (country):</label><input type="text" id="pdsQ39_detail"></div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="pds-question-col">
+                        <div class="pds-question-item">
+                          <div class="pds-question-text"><strong>40.</strong> Pursuant to: (a) Indigenous People's Act (RA 8371); (b) Magna Carta for Disabled Persons (RA 7277, as amended); and (c) Expanded Solo Parents Welfare Act (RA 11861), please answer the following items:</div>
+                          <div class="pds-sub-question">
+                            <label>a. Are you a member of any indigenous group?</label>
+                          </div>
+                          <div class="pds-sub-question">
+                            <label>b. Are you a person with disability?</label>
+                          </div>
+                          <div class="pds-sub-question">
+                            <label>c. Are you a solo parent?</label>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="pds-checkbox-col">
+                        <div class="pds-sub-question">
+                          <div class="pds-yes-no">
+                            <label>YES <input type="checkbox" id="pdsQ40a_yes" onchange="handleCheckbox('pdsQ40a_yes', 'pdsQ40a_no')"></label>
+                            <label>NO <input type="checkbox" id="pdsQ40a_no" onchange="handleCheckbox('pdsQ40a_no', 'pdsQ40a_yes')"></label>
+                          </div>
+                          <div class="pds-detail-field" id="pdsQ40a_details"><label>If YES, please specify:</label><input type="text" id="pdsQ40a_detail"></div>
+                        </div>
+                        <div class="pds-sub-question">
+                          <div class="pds-yes-no">
+                            <label>YES <input type="checkbox" id="pdsQ40b_yes" onchange="handleCheckbox('pdsQ40b_yes', 'pdsQ40b_no')"></label>
+                            <label>NO <input type="checkbox" id="pdsQ40b_no" onchange="handleCheckbox('pdsQ40b_no', 'pdsQ40b_yes')"></label>
+                          </div>
+                          <div class="pds-detail-field" id="pdsQ40b_details"><label>If YES, please specify ID No.:</label><input type="text" id="pdsQ40b_detail"></div>
+                        </div>
+                        <div class="pds-sub-question">
+                          <div class="pds-yes-no">
+                            <label>YES <input type="checkbox" id="pdsQ40c_yes" onchange="handleCheckbox('pdsQ40c_yes', 'pdsQ40c_no')"></label>
+                            <label>NO <input type="checkbox" id="pdsQ40c_no" onchange="handleCheckbox('pdsQ40c_no', 'pdsQ40c_yes')"></label>
+                          </div>
+                          <div class="pds-detail-field" id="pdsQ40c_details"><label>If YES, please specify ID No.:</label><input type="text" id="pdsQ40c_detail"></div>
+                        </div>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
 
                   <div class="pds-references-section">
                     <h3>41. REFERENCES (Person not related by consanguinity or affinity to applicant/appointee)</h3>
