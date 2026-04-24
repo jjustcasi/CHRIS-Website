@@ -269,6 +269,11 @@ function signup() {
     return;
   }
 
+  if (!document.getElementById('agreeTerms').checked) {
+    showMessage('authMessage', 'You must agree to the Terms and Conditions and Privacy Policy.', false);
+    return;
+  }
+
   const localUserPayload = {
     email,
     name: `${firstName} ${middleName} ${surname}`.trim(),

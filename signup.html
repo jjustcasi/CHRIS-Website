@@ -59,6 +59,7 @@
               </svg>
             </button>
           </div>
+          <p class="password-policy">Password must be at least 6 characters</p>
         </div>
         <div>
           <label for="signupConfirmPassword">Confirm Password</label>
@@ -77,14 +78,14 @@
             <option value="">Select Gender</option>
             <option value="Male">Male</option>
             <option value="Female">Female</option>
-            <option value="Other">Other</option>
           </select>
         </div>
-        <div class="legal-note">
-          <p>People who use this service may have shared your contact details with CHRIS.</p>
-          <p>By tapping Sign Up, you agree to our <a href="terms.html">Terms</a>, <a href="privacy.html">Privacy Policy</a>, and <a href="cookies.html">Cookies Policy</a>.</p>
+        <div>
+          <label for="agreeTerms" style="display: flex; align-items: flex-start;">
+            <input type="checkbox" id="agreeTerms" required style="margin-right: 4px;">
+            <span>By creating an account, I confirm that I have read and agree to the <a href="terms.html">Terms and Conditions</a> and <a href="privacy.html">Privacy Policy</a>, and I consent to the collection and processing of my personal data.</span>
+          </label>
         </div>
-        <p class="form-note">Use at least 6 characters for better account safety.</p>
         <button class="btn btn-primary" type="submit">Sign Up</button>
       </form>
       <div id="authMessage" class="message"></div>
