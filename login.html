@@ -53,30 +53,8 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
   function initializeGoogleSignIn() {
-    const buttonContainer = document.getElementById('googleSignInButton');
-    if (!buttonContainer || !window.google) {
-      window.setTimeout(initializeGoogleSignIn, 100);
-      return;
-    }
-
-    const clientId = window.APP_CONFIG?.googleClientId || 'YOUR_GOOGLE_CLIENT_ID';
-    if (!clientId || clientId === 'YOUR_GOOGLE_CLIENT_ID') {
-      showMessage('authMessage', 'Google client ID is not configured. Update config.js.', false);
-      return;
-    }
-
-    google.accounts.id.initialize({
-      client_id: clientId,
-      callback: handleCredentialResponse
-    });
-
-    google.accounts.id.renderButton(buttonContainer, {
-      theme: 'outline',
-      size: 'large',
-      width: '100%'
-    });
-
-    google.accounts.id.prompt();
+    initializeGoogleAuthButton('googleSignInButton');
+    if (window.google) google.accounts.id.prompt();
   }
 
   window.addEventListener('DOMContentLoaded', initializeGoogleSignIn);

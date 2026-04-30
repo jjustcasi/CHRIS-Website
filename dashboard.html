@@ -36,8 +36,9 @@
           Announcements
           <span id="announcementsBadge" style="background: #ef4444; color: white; padding: 2px 6px; border-radius: 12px; font-size: 0.8rem; margin-left: 6px; display: none;">0</span>
         </button>
+        <button onclick="showPage('attendance')" class="menu-btn" id="attendanceBtn">Attendance</button>
         <button onclick="showPage('leave')" class="menu-btn" id="leaveBtn">Request Leave</button>
-        <button onclick="showPage('training')" class="menu-btn" id="trainingBtn">Training & Development</button>
+        <button onclick="showPage('training')" class="menu-btn" id="trainingBtn">Learning & Development Interventions</button>
         <button onclick="showPage('report')" class="menu-btn" id="reportBtn">Reports</button>
         <button onclick="showPage('performance')" class="menu-btn" id="performanceBtn">Performance</button>
         <button onclick="showPage('pds')" class="menu-btn" id="pdsBtn">PDS Form</button>
@@ -122,6 +123,17 @@
               </div>
             </div>
           </div>
+
+          <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+              <div>
+                <h3 style="margin:0 0 4px;">Recent Announcements</h3>
+                <p class="form-note" style="margin:0;">Latest company updates.</p>
+              </div>
+              <button class="btn btn-outline" type="button" onclick="showPage('announcements')">View All</button>
+            </div>
+            <div id="overviewAnnouncementSummary" class="announcement-board"></div>
+          </div>
         </div>
 
         <div id="announcementsPage" class="hidden">
@@ -143,8 +155,141 @@
           </div>
         </div>
 
+        <div id="attendancePage" class="hidden">
+          <h2>Attendance</h2>
+          
+          <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px;">
+              <div>
+                <p class="form-note" style="margin:0;">Current Date & Time</p>
+                <h3 id="currentDateTime" style="margin:5px 0 0;">--</h3>
+              </div>
+              <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button class="btn btn-primary" onclick="showClockInModal()" style="padding:12px 24px; font-size:1.1rem;">Clock In</button>
+                <button class="btn btn-outline" onclick="clockOutToday()" style="padding:12px 24px; font-size:1.1rem;">Clock Out</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Today's Status</h3>
+            <div class="attendance-tracker-grid">
+              <div class="attendance-tracker present">
+                <p>Present</p>
+                <h4 id="todayPresentCount">0</h4>
+              </div>
+              <div class="attendance-tracker late">
+                <p>Late</p>
+                <h4 id="todayLateCount">0</h4>
+              </div>
+              <div class="attendance-tracker absent">
+                <p>Absent</p>
+                <h4 id="todayAbsentCount">0</h4>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Shift Status</h3>
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px;">
+              <div>
+                <p class="form-note" style="margin:0;">Total Hours Today</p>
+                <h3 id="totalHoursToday" style="margin:5px 0 0;">0h</h3>
+              </div>
+              <div id="shiftStatusBadge" style="padding:8px 16px; border-radius:20px; background:#e5e7eb; font-weight:600;">
+                Incomplete
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Attendance History</h3>
+            <div class="table-wrap">
+              <table id="attendanceHistoryTable">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Time In</th>
+                    <th>Time Out</th>
+                    <th>Hours</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="attendanceHistoryBody">
+                  <tr>
+                    <td colspan="5" style="text-align:center;">No attendance records yet.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Clock In Modal -->
+        <div id="clockInModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; overflow-y:auto;">
+          <div style="background:white; margin:40px auto; padding:30px; border-radius:12px; max-width:500px; box-shadow:0 10px 40px rgba(0,0,0,0.2);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+              <h3>Clock In</h3>
+              <button onclick="closeClockInModal()" style="background:none; border:none; font-size:24px; cursor:pointer;">×</button>
+            </div>
+            <p style="margin-bottom:15px;">Take a photo to clock in:</p>
+            <div style="border:2px dashed #ccc; border-radius:10px; padding:20px; text-align:center; margin-bottom:15px;">
+              <video id="clockInVideo" style="width:100%; max-height:300px; border-radius:8px; display:none;" autoplay playsinline></video>
+              <canvas id="clockInCanvas" style="width:100%; max-height:300px; border-radius:8px; display:none;"></canvas>
+              <div id="clockInPlaceholder">
+                <p style="color:#666;">Camera preview will appear here</p>
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="captureClockInPhoto()" style="width:100%; margin-bottom:10px;">Capture Photo</button>
+            <button class="btn btn-outline" onclick="closeClockInModal()" style="width:100%;">Cancel</button>
+          </div>
+        </div>
+
         <div id="leavePage" class="hidden">
-          <h2>Request Leave</h2>
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:20px;">
+            <h2 style="margin:0;">Request Leave</h2>
+            <button class="btn btn-primary" onclick="showAddLeaveRequestModal()">+ ADD REQUEST</button>
+          </div>
+
+          <!-- Add Leave Request Modal -->
+          <div id="addLeaveRequestModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; overflow-y:auto;">
+            <div style="background:white; margin:40px auto; padding:30px; border-radius:12px; max-width:500px; box-shadow:0 10px 40px rgba(0,0,0,0.2);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3>Leave Application</h3>
+                <button onclick="closeAddLeaveRequestModal()" style="background:none; border:none; font-size:24px; cursor:pointer;">×</button>
+              </div>
+              <div>
+                <label style="display:block; margin-bottom:8px; font-weight:600;">Type of Leave <span style="color:#e74c3c;">*</span></label>
+                <select id="addLeaveType" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; margin-bottom:15px;">
+                  <option value="">Select Leave Type</option>
+                  <option value="Vacation Leave">Vacation Leave</option>
+                  <option value="Sick Leave">Sick Leave</option>
+                  <option value="Mandatory/Force Leave">Mandatory/Force Leave</option>
+                  <option value="Special Privilege Leave">Special Privilege Leave</option>
+                  <option value="Solo Parent Leave">Solo Parent Leave</option>
+                  <option value="Special Emergency (Calamity) Leave">Special Emergency (Calamity) Leave</option>
+                </select>
+              </div>
+              <div class="grid-2">
+                <div>
+                  <label style="display:block; margin-bottom:8px; font-weight:600;">From Date <span style="color:#e74c3c;">*</span></label>
+                  <input type="date" id="addStartDate" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;">
+                </div>
+                <div>
+                  <label style="display:block; margin-bottom:8px; font-weight:600;">To Date <span style="color:#e74c3c;">*</span></label>
+                  <input type="date" id="addEndDate" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;">
+                </div>
+              </div>
+              <div style="margin-top:15px;">
+                <label style="display:block; margin-bottom:8px; font-weight:600;">Description <span style="color:#e74c3c;">*</span></label>
+                <textarea id="addLeaveDescription" rows="4" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; resize:vertical;" placeholder="Describe the reason for your leave request..."></textarea>
+              </div>
+              <div style="display:flex; gap:10px; margin-top:20px;">
+                <button class="btn btn-primary" onclick="submitLeaveRequest()" style="flex:1;">Submit Request</button>
+                <button class="btn btn-outline" onclick="closeAddLeaveRequestModal()" style="flex:1;">Cancel</button>
+              </div>
+            </div>
+          </div>
 
           <!-- Leave Details Modal for Employee -->
           <div id="leaveDetailsModalEmployee" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 999; overflow-y: auto;">
@@ -169,7 +314,7 @@
             <div id="leaveBalanceContainer" class="attendance-tracker-grid"></div>
           </div>
 
-          <div class="card">
+          <div class="card hidden" id="oldApplyLeaveSection">
             <h3>Apply Leave</h3>
             <select id="leaveType"></select>
             <div class="grid-2">
@@ -219,8 +364,64 @@
         </div>
 
         <div id="trainingPage" class="hidden">
-          <h2>Training & Development</h2>
-          <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:20px;">
+            <h2 style="margin:0;">Learning & Development Interventions</h2>
+            <button class="btn btn-primary" onclick="showAddTrainingModal()">+ ADD TRAINING RECORD</button>
+          </div>
+
+          <!-- Add Training Modal -->
+          <div id="addTrainingModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; overflow-y:auto;">
+            <div style="background:white; margin:40px auto; padding:30px; border-radius:12px; max-width:500px; box-shadow:0 10px 40px rgba(0,0,0,0.2);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3>Add Training Record</h3>
+                <button onclick="closeAddTrainingModal()" style="background:none; border:none; font-size:24px; cursor:pointer;">×</button>
+              </div>
+              <div>
+                <label style="display:block; margin-bottom:8px; font-weight:600;">Title <span style="color:#e74c3c;">*</span></label>
+                <input type="text" id="addTrainingTitle" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; margin-bottom:15px;" placeholder="Enter training title">
+              </div>
+              <div class="grid-2">
+                <div>
+                  <label style="display:block; margin-bottom:8px; font-weight:600;">From Date <span style="color:#e74c3c;">*</span></label>
+                  <input type="date" id="addTrainingStart" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;">
+                </div>
+                <div>
+                  <label style="display:block; margin-bottom:8px; font-weight:600;">To Date <span style="color:#e74c3c;">*</span></label>
+                  <input type="date" id="addTrainingEnd" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;">
+                </div>
+              </div>
+              <div style="margin-top:15px;">
+                <label style="display:block; margin-bottom:8px; font-weight:600;">Hours <span style="color:#e74c3c;">*</span></label>
+                <input type="number" id="addTrainingHours" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; margin-bottom:15px;" placeholder="Enter number of hours">
+              </div>
+              <div style="margin-top:15px;">
+                <label style="display:block; margin-bottom:8px; font-weight:600;">Type <span style="color:#e74c3c;">*</span></label>
+                <select id="addTrainingType" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; margin-bottom:15px;">
+                  <option value="">Select Type</option>
+                  <option value="Managerial">Managerial</option>
+                  <option value="Technical">Technical</option>
+                  <option value="Foundation">Foundation</option>
+                  <option value="Supervisory">Supervisory</option>
+                  <option value="Compliance">Compliance</option>
+                </select>
+              </div>
+              <div style="margin-top:15px;">
+                <label style="display:block; margin-bottom:8px; font-weight:600;">Conducted By <span style="color:#e74c3c;">*</span></label>
+                <input type="text" id="addTrainingConductedBy" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; margin-bottom:15px;" placeholder="Enter training provider/organization">
+              </div>
+              <div style="margin-top:15px;">
+                <label style="display:block; margin-bottom:8px; font-weight:600;">Certificate File <span style="color:#e74c3c;">*</span></label>
+                <input type="file" id="addTrainingCertificate" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;">
+                <p style="font-size:0.85rem; color:#666; margin-top:8px;">Accepted formats: PDF, DOC, DOCX, JPG, PNG</p>
+              </div>
+              <div style="display:flex; gap:10px; margin-top:20px;">
+                <button class="btn btn-primary" onclick="submitTrainingRecord()" style="flex:1;">Save Training</button>
+                <button class="btn btn-outline" onclick="closeAddTrainingModal()" style="flex:1;">Cancel</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card hidden" id="oldAddTrainingSection">
             <h3>Add Training</h3>
             <input placeholder="Title" id="title">
             <div class="grid-2">
@@ -248,7 +449,8 @@
                     <th>Dates</th>
                     <th>Hours</th>
                     <th>Type</th>
-                    <th>Sponsor</th>
+                    <th>Conducted By</th>
+                    <th>Certificate</th>
                     <th>Action</th>
                   </tr>
                 </thead>
@@ -304,7 +506,100 @@
 
         <div id="pdsPage" class="hidden">
           <h2>Personal Data Sheet (PDS)</h2>
+          
+          <!-- Personal Info Section -->
           <div class="card">
+            <h3>Employee Information</h3>
+            <p class="form-note">Please fill in your employee details. This information is required for PDS submission.</p>
+            <div class="grid-2">
+              <div>
+                <label style="display:block; margin-bottom:8px; font-weight:600;">Employee Number/ID <span style="color:#e74c3c;">*</span></label>
+                <input type="text" id="pdsEmployeeNumber" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;" placeholder="Enter your employee ID">
+              </div>
+              <div>
+                <label style="display:block; margin-bottom:8px; font-weight:600;">Phone Number <span style="color:#e74c3c;">*</span></label>
+                <input type="tel" id="pdsPhoneNumber" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;" placeholder="Enter your phone number">
+              </div>
+            </div>
+            <div class="grid-2" style="margin-top:15px;">
+              <div>
+                <label style="display:block; margin-bottom:8px; font-weight:600;">Department/Office <span style="color:#e74c3c;">*</span></label>
+                <input type="text" id="pdsDepartment" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;" placeholder="Enter your department">
+              </div>
+              <div>
+                <label style="display:block; margin-bottom:8px; font-weight:600;">Position/Designation <span style="color:#e74c3c;">*</span></label>
+                <input type="text" id="pdsPosition" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;" placeholder="Enter your position">
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="savePersonalInfo()" style="margin-top:15px;">Save Information</button>
+            <div id="personalInfoMessage" class="message" style="margin-top:10px;"></div>
+          </div>
+
+          <!-- PDS Form Template Download and Upload -->
+          <div class="card">
+            <h3>Complete PDS Form</h3>
+            <p class="form-note">Download the PDS form template, fill it out, and upload the completed form below. PDS forms are submitted yearly.</p>
+            
+            <div style="display:flex; gap:15px; flex-wrap:wrap; margin-bottom:20px;">
+              <a href="data/PDS_Form_212_Revised_2025.xlsx" download class="btn btn-outline" style="display:inline-flex; align-items:center; gap:8px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Download PDS Template
+              </a>
+            </div>
+
+            <div style="border:2px dashed #ccc; border-radius:10px; padding:30px; text-align:center; background:#f9f9f9;">
+              <div id="pdsUploadArea">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.5" style="margin-bottom:15px;">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <p style="margin:0 0 10px; color:#374151; font-weight:500;">Upload Completed PDS Form</p>
+                <p style="margin:0 0 15px; color:#6b7280; font-size:0.9rem;">Accepted formats: PDF, DOC, DOCX, XLS, XLSX (Max 10MB)</p>
+                <input type="file" id="pdsFileUpload" accept=".pdf,.doc,.docx,.xls,.xlsx" style="display:none;" onchange="handlePdsFileUpload(event)">
+                <button class="btn btn-outline" onclick="document.getElementById('pdsFileUpload').click()">Select File</button>
+              </div>
+              <div id="pdsFileInfo" style="display:none; text-align:left; padding:15px; background:#fff; border-radius:8px; border:1px solid #e5e7eb;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <div>
+                    <p style="margin:0 0 5px; font-weight:600;" id="pdsFileName">filename.pdf</p>
+                    <p style="margin:0; color:#6b7280; font-size:0.85rem;" id="pdsFileSize">0 KB</p>
+                  </div>
+                  <button onclick="removePdsFile()" style="background:none; border:none; color:#dc2626; cursor:pointer; font-size:1.2rem;">×</button>
+                </div>
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="submitPdsForm()" style="margin-top:15px;">Submit PDS Form</button>
+            <div id="pdsSubmitMessage" class="message" style="margin-top:10px;"></div>
+            <p style="margin-top:15px; font-size:0.85rem; color:#6b7280;">Last submitted: <span id="pdsLastSubmitted">Never</span></p>
+          </div>
+
+          <div class="card">
+            <h3>Submission History</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Year</th>
+                    <th>File Name</th>
+                    <th>Submitted</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="pdsSubmissionHistory">
+                  <tr>
+                    <td colspan="4" style="text-align:center;">No PDS submissions yet.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card hidden" id="pdsFillUpFormSection">
             <div class="pds-official-header">
               <p class="pds-cs-number">CS Form No. 212</p>
               <p class="pds-cs-revision">Revised 2025</p>
@@ -1126,7 +1421,6 @@
               <!-- Shared section navigation -->
               <div class="pds-section-navigation" id="pdsGlobalSectionNavigation">
                 <button class="btn btn-outline" type="button" onclick="prevPdsSection()" id="pdsBtnPrevious">Previous</button>
-                <button class="btn btn-primary" type="button" onclick="nextPdsSection()" id="pdsBtnNext">Next</button>
               </div>
 
               <div class="pds-actions pds-actions-bottom-right" id="pdsFinalActions">

@@ -87,7 +87,7 @@ function validateBirthday(value) {
 
 app.post('/api/auth/signup', async (req, res) => {
   const { surname, firstName, middleName, suffix, email, birthday, password, gender } = req.body;
-  if (!surname || !firstName || !middleName || !suffix || !email || !birthday || !password || !gender) {
+  if (!surname || !firstName || !email || !birthday || !password || !gender) {
     return res.status(400).json({ success: false, message: 'Please complete all sign up fields.' });
   }
 
@@ -110,14 +110,17 @@ app.post('/api/auth/signup', async (req, res) => {
   }
 
   const hashedPassword = bcrypt.hashSync(password, 10);
-  const name = [firstName.trim(), middleName.trim(), surname.trim()].filter(Boolean).join(' ') + (suffix ? ` ${suffix.trim()}` : '');
+  const name = [firstName, middleName, surname, suffix]
+    .map(value => String(value || '').trim())
+    .filter(Boolean)
+    .join(' ');
 
   const user = await createUser({
     name: name.trim(),
     surname: surname.trim(),
     firstName: firstName.trim(),
-    middleName: middleName.trim(),
-    suffix: suffix.trim(),
+    middleName: String(middleName || '').trim(),
+    suffix: String(suffix || '').trim(),
     email: normalizedEmail,
     birthday,
     password: hashedPassword,

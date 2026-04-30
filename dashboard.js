@@ -32,6 +32,29 @@ function userDataKey(type) {
   return 'chris_' + type + '_' + currentUser.email;
 }
 
+function getLocalDateString(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function parseLocalDateInput(value) {
+  if (!value) return null;
+  const [year, month, day] = value.split('-').map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day);
+}
+
+function loadLocalArray(type) {
+  try {
+    const value = JSON.parse(localStorage.getItem(userDataKey(type)) || '[]');
+    return Array.isArray(value) ? value : [];
+  } catch (_) {
+    return [];
+  }
+}
+
 function getReadAnnouncementIds() {
   try {
     const ids = JSON.parse(localStorage.getItem(userDataKey('announcement_read_ids')) || '[]');
@@ -128,6 +151,40 @@ function renderAnnouncementUnreadPanel() {
   });
 }
 
+function renderOverviewAnnouncementSummary() {
+  const board = document.getElementById('overviewAnnouncementSummary');
+  if (!board) return;
+  board.innerHTML = '';
+
+  // Get the 3 most recent announcements
+  const recentAnnouncements = (announcements || []).slice(0, 3);
+
+  if (!recentAnnouncements.length) {
+    board.innerHTML = '<p class="form-note">No announcements at this time.</p>';
+    return;
+  }
+
+  recentAnnouncements.forEach(item => {
+    const block = document.createElement('div');
+    block.className = 'announcement-item';
+    block.style.padding = '12px';
+    block.style.border = '1px solid #e5e7eb';
+    block.style.borderRadius = '8px';
+    block.style.marginBottom = '10px';
+
+    const title = item.title || item.text || 'Announcement';
+    const date = item.date || '-';
+    const text = item.text || '';
+
+    block.innerHTML = `
+      <strong>${title}</strong>
+      <p class="form-note" style="margin: 4px 0 0;">${text.substring(0, 100)}${text.length > 100 ? '...' : ''}</p>
+      <p class="form-note" style="margin: 8px 0 0; font-size: 0.8rem;">Posted: ${date}</p>
+    `;
+    board.appendChild(block);
+  });
+}
+
 function loadPreviousSnapshot() {
   try {
     const raw = localStorage.getItem(userDataKey('notification_state'));
@@ -218,11 +275,15 @@ function hydrateEmployeeHint() {
 async function loadUserData() {
   pdsData = JSON.parse(localStorage.getItem(userDataKey('pds')) || '{}');
 
-  leaves = [];
-  trainings = [];
-  attendance = [];
+  leaves = loadLocalArray('leaves');
+  trainings = loadLocalArray('trainings');
+  attendance = loadLocalArray('attendance');
   announcements = [];
-  evaluation = { status: '' };
+  try {
+    evaluation = JSON.parse(localStorage.getItem(userDataKey('evaluation')) || '{"status":""}');
+  } catch (_) {
+    evaluation = { status: '' };
+  }
 
   try {
     const snapshotRes = await fetch('/api/hr/snapshot?email=' + encodeURIComponent(currentUser.email));
@@ -260,6 +321,12 @@ async function loadUserData() {
 }
 
 function saveUserData() {
+  localStorage.setItem(userDataKey('leaves'), JSON.stringify(leaves));
+  localStorage.setItem(userDataKey('trainings'), JSON.stringify(trainings));
+  localStorage.setItem(userDataKey('attendance'), JSON.stringify(attendance));
+  localStorage.setItem(userDataKey('evaluation'), JSON.stringify(evaluation || { status: '' }));
+  localStorage.setItem(userDataKey('pds'), JSON.stringify(pdsData));
+
   fetch('/api/hr/snapshot', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -274,7 +341,6 @@ function saveUserData() {
     // Keep UI responsive even if sync fails.
   });
 
-  localStorage.setItem(userDataKey('pds'), JSON.stringify(pdsData));
 }
 
 function requireLogin() {
@@ -385,6 +451,7 @@ function logout() {
 function showPage(page) {
   document.getElementById('overviewPage').classList.toggle('hidden', page !== 'overview');
   document.getElementById('announcementsPage').classList.toggle('hidden', page !== 'announcements');
+  document.getElementById('attendancePage').classList.toggle('hidden', page !== 'attendance');
   document.getElementById('leavePage').classList.toggle('hidden', page !== 'leave');
   document.getElementById('trainingPage').classList.toggle('hidden', page !== 'training');
   document.getElementById('reportPage').classList.toggle('hidden', page !== 'report');
@@ -396,6 +463,7 @@ function showPage(page) {
   }
   document.getElementById('overviewBtn').classList.toggle('active', page === 'overview');
   document.getElementById('announcementsBtn').classList.toggle('active', page === 'announcements');
+  document.getElementById('attendanceBtn').classList.toggle('active', page === 'attendance');
   document.getElementById('leaveBtn').classList.toggle('active', page === 'leave');
   document.getElementById('trainingBtn').classList.toggle('active', page === 'training');
   document.getElementById('reportBtn').classList.toggle('active', page === 'report');
@@ -404,6 +472,10 @@ function showPage(page) {
 
   if (page === 'announcements') {
     renderAnnouncementModule();
+  }
+
+  if (page === 'attendance') {
+    renderAttendancePage();
   }
 
   if (page === 'report') {
@@ -918,6 +990,10 @@ function loadPdsForm() {
   syncDualCitizenshipTypeCheckboxes();
   hydrateStructuredAddressFields();
   hydrateFamilyStructuredFields();
+
+  // Load personal info and upload status
+  loadPdsPersonalInfo();
+  loadPdsUploadStatus();
   initializeSignaturePad();
   initializeFinalSignaturePad();
 }
@@ -1436,6 +1512,242 @@ function savePds() {
   showPdsMessage('PDS saved successfully.', true);
 }
 
+function savePersonalInfo() {
+  const employeeNumber = document.getElementById('pdsEmployeeNumber').value.trim();
+  const phoneNumber = document.getElementById('pdsPhoneNumber').value.trim();
+  const department = document.getElementById('pdsDepartment').value.trim();
+  const position = document.getElementById('pdsPosition').value.trim();
+
+  if (!employeeNumber || !phoneNumber || !department || !position) {
+    const msg = document.getElementById('personalInfoMessage');
+    if (msg) {
+      msg.innerHTML = '<p style="color:#dc2626; margin:0;">Please fill in all required fields.</p>';
+    }
+    return;
+  }
+
+  // Save to user data
+  if (!pdsData) pdsData = {};
+  pdsData.employeeNumber = employeeNumber;
+  pdsData.phoneNumber = phoneNumber;
+  pdsData.department = department;
+  pdsData.position = position;
+  pdsData.personalInfoUpdatedAt = new Date().toISOString();
+
+  saveUserData();
+
+  const msg = document.getElementById('personalInfoMessage');
+  if (msg) {
+    msg.innerHTML = '<p style="color:#15803d; margin:0;">Personal information saved successfully!</p>';
+  }
+}
+
+function handlePdsFileUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // Check file size (max 10MB)
+  if (file.size > 10 * 1024 * 1024) {
+    showPdsSubmitMessage('File size must not exceed 10MB.', false);
+    return;
+  }
+
+  // Store file info
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const pdsUploadData = {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      fileData: e.target.result,
+      uploadedAt: new Date().toISOString()
+    };
+
+    localStorage.setItem(userDataKey('pds_upload'), JSON.stringify(pdsUploadData));
+
+    // Update UI
+    const uploadArea = document.getElementById('pdsUploadArea');
+    const fileInfo = document.getElementById('pdsFileInfo');
+    const fileName = document.getElementById('pdsFileName');
+    const fileSize = document.getElementById('pdsFileSize');
+
+    if (uploadArea) uploadArea.style.display = 'none';
+    if (fileInfo) fileInfo.style.display = 'block';
+    if (fileName) fileName.textContent = file.name;
+    if (fileSize) fileSize.textContent = formatFileSize(file.size);
+  };
+  reader.readAsDataURL(file);
+}
+
+function removePdsFile() {
+  localStorage.removeItem(userDataKey('pds_upload'));
+
+  const uploadArea = document.getElementById('pdsUploadArea');
+  const fileInfo = document.getElementById('pdsFileInfo');
+  const fileInput = document.getElementById('pdsFileUpload');
+
+  if (uploadArea) uploadArea.style.display = 'block';
+  if (fileInfo) fileInfo.style.display = 'none';
+  if (fileInput) fileInput.value = '';
+}
+
+function submitPdsForm() {
+  const pdsUploadData = localStorage.getItem(userDataKey('pds_upload'));
+
+  if (!pdsUploadData) {
+    showPdsSubmitMessage('Please upload a completed PDS form first.', false);
+    return;
+  }
+
+  // Check if personal info is filled
+  const employeeNumber = document.getElementById('pdsEmployeeNumber').value;
+  const phoneNumber = document.getElementById('pdsPhoneNumber').value;
+  const department = document.getElementById('pdsDepartment').value;
+  const position = document.getElementById('pdsPosition').value;
+
+  if (!employeeNumber || !phoneNumber || !department || !position) {
+    showPdsSubmitMessage('Please fill in your personal information first.', false);
+    return;
+  }
+
+  const currentYear = new Date().getFullYear();
+  const submissionHistory = getPdsSubmissionHistory();
+  if (submissionHistory.some(item => new Date(item.submittedAt).getFullYear() === currentYear)) {
+    showPdsSubmitMessage(`Your PDS form has already been submitted for ${currentYear}.`, false);
+    return;
+  }
+
+  // Save submission
+  const submission = {
+    personalInfo: {
+      employeeNumber,
+      phoneNumber,
+      department,
+      position
+    },
+    pdsFile: JSON.parse(pdsUploadData),
+    submittedAt: new Date().toISOString()
+  };
+
+  localStorage.setItem(userDataKey('pds_submission'), JSON.stringify(submission));
+  submissionHistory.unshift(submission);
+  localStorage.setItem(userDataKey('pds_submissions'), JSON.stringify(submissionHistory));
+
+  showPdsSubmitMessage('PDS form submitted successfully!', true);
+  updateLastSubmittedDate();
+  renderPdsSubmissionHistory();
+}
+
+function showPdsSubmitMessage(message, isSuccess) {
+  const msg = document.getElementById('pdsSubmitMessage');
+  if (msg) {
+    msg.innerHTML = `<p style="color:${isSuccess ? '#15803d' : '#dc2626'}; margin:0;">${message}</p>`;
+  }
+}
+
+function formatFileSize(bytes) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function updateLastSubmittedDate() {
+  const history = getPdsSubmissionHistory();
+  const submission = history[0] || null;
+  const lastSubmitted = document.getElementById('pdsLastSubmitted');
+  if (lastSubmitted) {
+    if (submission) {
+      lastSubmitted.textContent = new Date(submission.submittedAt).toLocaleDateString();
+    } else {
+      lastSubmitted.textContent = 'Never';
+    }
+  }
+}
+
+function getPdsSubmissionHistory() {
+  try {
+    const history = JSON.parse(localStorage.getItem(userDataKey('pds_submissions')) || '[]');
+    if (Array.isArray(history)) return history;
+  } catch (_) {
+    // Fall through to legacy single submission.
+  }
+
+  try {
+    const legacySubmission = JSON.parse(localStorage.getItem(userDataKey('pds_submission')) || 'null');
+    return legacySubmission ? [legacySubmission] : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+function renderPdsSubmissionHistory() {
+  const tbody = document.getElementById('pdsSubmissionHistory');
+  if (!tbody) return;
+
+  const history = getPdsSubmissionHistory();
+  if (!history.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No PDS submissions yet.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = history.map(item => {
+    const submittedDate = item.submittedAt ? new Date(item.submittedAt) : null;
+    const year = submittedDate && !Number.isNaN(submittedDate.getTime()) ? submittedDate.getFullYear() : '-';
+    const submitted = submittedDate && !Number.isNaN(submittedDate.getTime()) ? submittedDate.toLocaleString() : '-';
+    const fileName = item.pdsFile?.fileName || '-';
+
+    return `
+      <tr>
+        <td>${year}</td>
+        <td>${fileName}</td>
+        <td>${submitted}</td>
+        <td><span class="status approved">Submitted</span></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function loadPdsPersonalInfo() {
+  if (!pdsData) return;
+
+  if (pdsData.employeeNumber) {
+    const el = document.getElementById('pdsEmployeeNumber');
+    if (el) el.value = pdsData.employeeNumber;
+  }
+  if (pdsData.phoneNumber) {
+    const el = document.getElementById('pdsPhoneNumber');
+    if (el) el.value = pdsData.phoneNumber;
+  }
+  if (pdsData.department) {
+    const el = document.getElementById('pdsDepartment');
+    if (el) el.value = pdsData.department;
+  }
+  if (pdsData.position) {
+    const el = document.getElementById('pdsPosition');
+    if (el) el.value = pdsData.position;
+  }
+}
+
+function loadPdsUploadStatus() {
+  const pdsUploadData = localStorage.getItem(userDataKey('pds_upload'));
+  if (pdsUploadData) {
+    const data = JSON.parse(pdsUploadData);
+    const uploadArea = document.getElementById('pdsUploadArea');
+    const fileInfo = document.getElementById('pdsFileInfo');
+    const fileName = document.getElementById('pdsFileName');
+    const fileSize = document.getElementById('pdsFileSize');
+
+    if (uploadArea) uploadArea.style.display = 'none';
+    if (fileInfo) fileInfo.style.display = 'block';
+    if (fileName) fileName.textContent = data.fileName;
+    if (fileSize) fileSize.textContent = formatFileSize(data.fileSize);
+  }
+  updateLastSubmittedDate();
+  renderPdsSubmissionHistory();
+}
+
 function resetPdsForm() {
   pdsData = {};
   saveUserData();
@@ -1558,6 +1870,83 @@ function updateLeave(id, status) {
   saveUserData();
   renderLeaves();
   renderOverview();
+}
+
+function showAddLeaveRequestModal() {
+  const modal = document.getElementById('addLeaveRequestModal');
+  if (modal) {
+    modal.style.display = 'block';
+    // Populate leave type dropdown
+    const leaveTypeSelect = document.getElementById('addLeaveType');
+    if (leaveTypeSelect) {
+      leaveTypeSelect.innerHTML = '<option value="">Select Leave Type</option>';
+      const genderLeaveTypes = getGenderAppropriateLeaveTypes();
+      genderLeaveTypes.forEach(type => {
+        const option = document.createElement('option');
+        option.value = type;
+        option.textContent = type;
+        leaveTypeSelect.appendChild(option);
+      });
+    }
+  }
+}
+
+function closeAddLeaveRequestModal() {
+  const modal = document.getElementById('addLeaveRequestModal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+  // Clear form
+  document.getElementById('addLeaveType').value = '';
+  document.getElementById('addStartDate').value = '';
+  document.getElementById('addEndDate').value = '';
+  document.getElementById('addLeaveDescription').value = '';
+}
+
+function submitLeaveRequest() {
+  const type = document.getElementById('addLeaveType').value;
+  const start = document.getElementById('addStartDate').value;
+  const end = document.getElementById('addEndDate').value;
+  const description = document.getElementById('addLeaveDescription').value;
+
+  if (!type || !start || !end || !description) {
+    showLeaveNotification('Please fill in all required fields.', 'error', 3000);
+    return;
+  }
+
+  // Check if start date is at least 1 week from today
+  const today = parseLocalDateInput(getLocalDateString());
+  const startDate = parseLocalDateInput(start);
+  const daysDiff = Math.ceil((startDate - today) / (1000 * 60 * 60 * 24));
+
+  if (daysDiff < 7) {
+    showLeaveNotification('You can only apply for leave at least 1 week before the starting date.', 'error', 4000);
+    return;
+  }
+
+  const days = daysBetween(start, end);
+  if (!days) {
+    showLeaveNotification('Invalid date range.', 'error', 3000);
+    return;
+  }
+
+  const leaveObj = {
+    id: Date.now(),
+    type,
+    start,
+    end,
+    days,
+    status: 'Pending',
+    description: description
+  };
+
+  leaves.unshift(leaveObj);
+  saveUserData();
+  renderLeaves();
+  renderOverview();
+
+  showLeaveNotification(`Leave request submitted! Waiting for admin approval.`, 'success', 3000);
+  closeAddLeaveRequestModal();
 }
 
 function renderLeaves() {
@@ -1730,18 +2119,86 @@ function deleteTraining(id) {
   saveCurrentSnapshot();
 }
 
+function showAddTrainingModal() {
+  const modal = document.getElementById('addTrainingModal');
+  if (modal) {
+    modal.style.display = 'block';
+  }
+}
+
+function closeAddTrainingModal() {
+  const modal = document.getElementById('addTrainingModal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+  // Clear form
+  document.getElementById('addTrainingTitle').value = '';
+  document.getElementById('addTrainingStart').value = '';
+  document.getElementById('addTrainingEnd').value = '';
+  document.getElementById('addTrainingHours').value = '';
+  document.getElementById('addTrainingType').value = '';
+  document.getElementById('addTrainingConductedBy').value = '';
+  document.getElementById('addTrainingCertificate').value = '';
+}
+
+function submitTrainingRecord() {
+  const title = document.getElementById('addTrainingTitle').value.trim();
+  const start = document.getElementById('addTrainingStart').value;
+  const end = document.getElementById('addTrainingEnd').value;
+  const hours = document.getElementById('addTrainingHours').value;
+  const type = document.getElementById('addTrainingType').value;
+  const conductedBy = document.getElementById('addTrainingConductedBy').value.trim();
+  const certFile = document.getElementById('addTrainingCertificate').files[0];
+
+  if (!title || !start || !end || !hours || !type || !conductedBy || !certFile) {
+    showLeaveNotification('Please fill in all required fields and attach the certificate.', 'error', 3000);
+    return;
+  }
+
+  // Read certificate file
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const trainingObj = {
+      id: Date.now(),
+      title,
+      start,
+      end,
+      hours,
+      type,
+      conductedBy,
+      certificate: {
+        name: certFile.name,
+        type: certFile.type,
+        data: e.target.result
+      }
+    };
+
+    trainings.unshift(trainingObj);
+    saveUserData();
+    renderTraining();
+    renderOverview();
+    saveCurrentSnapshot();
+
+    showLeaveNotification('Training record added successfully!', 'success', 3000);
+    closeAddTrainingModal();
+  };
+  reader.readAsDataURL(certFile);
+}
+
 function renderTraining() {
   const tbody = document.querySelector('#trainingTable tbody');
   tbody.innerHTML = '';
 
   trainings.forEach(t => {
+    const hasCert = t.certificate ? '<span style="color:#15803d;">Attached</span>' : '-';
     const row = `
       <tr>
-        <td>${t.title}</td>
+        <td>${t.title || '-'}</td>
         <td>${t.start || '-'} - ${t.end || '-'}</td>
         <td>${t.hours || '-'}</td>
-        <td>${t.type}</td>
-        <td>${t.sponsor || '-'}</td>
+        <td>${t.type || '-'}</td>
+        <td>${t.conductedBy || t.sponsor || '-'}</td>
+        <td>${hasCert}</td>
         <td><button onclick="deleteTraining(${t.id})" class="btn btn-danger">Delete</button></td>
       </tr>`;
     tbody.innerHTML += row;
@@ -1815,6 +2272,222 @@ function renderAnnouncementModule() {
   });
 }
 
+function renderAttendancePage() {
+  // Update current date and time
+  const now = new Date();
+  const dateTimeStr = now.toLocaleString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+  const dateTimeEl = document.getElementById('currentDateTime');
+  if (dateTimeEl) {
+    dateTimeEl.textContent = dateTimeStr;
+  }
+
+  // Update today's attendance counts
+  const todayStr = getLocalDateString(now);
+  const todayAttendance = attendance.filter(a => a.date === todayStr);
+  const presentCount = todayAttendance.filter(a => a.status === 'Present').length;
+  const lateCount = todayAttendance.filter(a => a.status === 'Late').length;
+  const absentCount = todayAttendance.length ? todayAttendance.filter(a => a.status === 'Absent').length : 1;
+
+  const todayPresentEl = document.getElementById('todayPresentCount');
+  const todayLateEl = document.getElementById('todayLateCount');
+  const todayAbsentEl = document.getElementById('todayAbsentCount');
+
+  if (todayPresentEl) todayPresentEl.textContent = String(presentCount);
+  if (todayLateEl) todayLateEl.textContent = String(lateCount);
+  if (todayAbsentEl) todayAbsentEl.textContent = String(absentCount);
+
+  // Calculate total hours today
+  let totalHours = 0;
+  todayAttendance.forEach(record => {
+    if (record.timeIn) {
+      const inTime = new Date(`2000-01-01T${record.timeIn}`);
+      const outTime = record.timeOut ? new Date(`2000-01-01T${record.timeOut}`) : new Date(`2000-01-01T${now.toTimeString().slice(0, 8)}`);
+      const hours = (outTime - inTime) / (1000 * 60 * 60);
+      if (hours > 0) totalHours += hours;
+    }
+  });
+
+  const hoursEl = document.getElementById('totalHoursToday');
+  const statusBadge = document.getElementById('shiftStatusBadge');
+  if (hoursEl) {
+    hoursEl.textContent = `${totalHours.toFixed(1)}h`;
+  }
+  if (statusBadge) {
+    if (totalHours >= 8) {
+      statusBadge.textContent = 'Complete';
+      statusBadge.style.background = '#22c55e';
+      statusBadge.style.color = 'white';
+    } else {
+      statusBadge.textContent = 'Incomplete';
+      statusBadge.style.background = '#e5e7eb';
+      statusBadge.style.color = '#374151';
+    }
+  }
+
+  // Render attendance history
+  const historyBody = document.getElementById('attendanceHistoryBody');
+  if (historyBody) {
+    if (!attendance.length) {
+      historyBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No attendance records yet.</td></tr>';
+    } else {
+      const sortedAttendance = [...attendance].sort((a, b) => {
+        if (a.date !== b.date) return b.date.localeCompare(a.date);
+        return (b.timeIn || '').localeCompare(a.timeIn || '');
+      });
+
+      historyBody.innerHTML = sortedAttendance.map(record => {
+        const hours = record.timeIn && record.timeOut ? (() => {
+          const inTime = new Date(`2000-01-01T${record.timeIn}`);
+          const outTime = new Date(`2000-01-01T${record.timeOut}`);
+          return ((outTime - inTime) / (1000 * 60 * 60)).toFixed(1);
+        })() : '-';
+
+        return `
+          <tr>
+            <td>${record.date || '-'}</td>
+            <td>${record.timeIn || '-'}</td>
+            <td>${record.timeOut || '-'}</td>
+            <td>${hours}h</td>
+            <td><span class="attendance-status-${record.status?.toLowerCase() || 'unknown'}">${record.status || '-'}</span></td>
+          </tr>
+        `;
+      }).join('');
+    }
+  }
+}
+
+function showClockInModal() {
+  const modal = document.getElementById('clockInModal');
+  if (modal) {
+    modal.style.display = 'block';
+    // Try to access camera
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+          const video = document.getElementById('clockInVideo');
+          const placeholder = document.getElementById('clockInPlaceholder');
+          if (video && placeholder) {
+            video.srcObject = stream;
+            video.style.display = 'block';
+            placeholder.style.display = 'none';
+          }
+        })
+        .catch(err => {
+          console.log('Camera access denied:', err);
+        });
+    }
+  }
+}
+
+function closeClockInModal() {
+  const modal = document.getElementById('clockInModal');
+  const video = document.getElementById('clockInVideo');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+  if (video && video.srcObject) {
+    video.srcObject.getTracks().forEach(track => track.stop());
+  }
+}
+
+function captureClockInPhoto() {
+  const video = document.getElementById('clockInVideo');
+  const canvas = document.getElementById('clockInCanvas');
+  if (video && canvas) {
+    if (!video.srcObject || !video.videoWidth) {
+      showLeaveNotification('Camera photo is required before clocking in.', 'error', 3000);
+      return;
+    }
+
+    canvas.style.display = 'block';
+    const ctx = canvas.getContext('2d');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    // Get the photo as data URL
+    const photoData = canvas.toDataURL('image/png');
+
+    // Create attendance record
+    const now = new Date();
+    const dateStr = getLocalDateString(now);
+    const timeStr = now.toTimeString().slice(0, 8);
+
+    const existingOpenRecord = attendance.find(record => record.date === dateStr && record.timeIn && !record.timeOut);
+    if (existingOpenRecord) {
+      showLeaveNotification('You are already clocked in for today.', 'info', 3000);
+      closeClockInModal();
+      renderAttendancePage();
+      return;
+    }
+
+    // Determine if late (assuming 8:00 AM cutoff)
+    const cutoffTime = new Date(`2000-01-01T08:00:00`);
+    const clockInTime = new Date(`2000-01-01T${timeStr}`);
+    const status = clockInTime > cutoffTime ? 'Late' : 'Present';
+
+    const newRecord = {
+      id: Date.now(),
+      date: dateStr,
+      timeIn: timeStr,
+      timeOut: '',
+      status: status,
+      photo: photoData
+    };
+
+    attendance.push(newRecord);
+    saveUserData();
+
+    showLeaveNotification(`Clocked in at ${timeStr} (${status})`, 'success', 3000);
+    closeClockInModal();
+    renderAttendance();
+    renderAttendancePage();
+  }
+}
+
+function clockOutToday() {
+  const now = new Date();
+  const dateStr = getLocalDateString(now);
+  const timeStr = now.toTimeString().slice(0, 8);
+  const openRecord = [...attendance].reverse().find(record => record.date === dateStr && record.timeIn && !record.timeOut);
+
+  if (!openRecord) {
+    showLeaveNotification('No active clock-in record for today.', 'error', 3000);
+    return;
+  }
+
+  openRecord.timeOut = timeStr;
+  saveUserData();
+  showLeaveNotification(`Clocked out at ${timeStr}.`, 'success', 3000);
+  renderAttendance();
+  renderAttendancePage();
+}
+
+// Update date/time every second
+setInterval(() => {
+  const dateTimeEl = document.getElementById('currentDateTime');
+  if (dateTimeEl) {
+    const now = new Date();
+    dateTimeEl.textContent = now.toLocaleString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  }
+}, 1000);
+
 function renderOverview() {
   const leaveQuota = {
     'Vacation Leave': 5,
@@ -1850,7 +2523,7 @@ function renderOverview() {
   // Render leave balance dynamically
   renderLeaveBalance(leaveQuota, requestedByType);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getLocalDateString();
   const upcoming = trainings
     .filter(t => t.start && t.start >= today)
     .sort((a, b) => (a.start > b.start ? 1 : -1));
@@ -1903,6 +2576,9 @@ function renderOverview() {
   document.getElementById('leavePendingCount').textContent = String(pendingLeaves);
   document.getElementById('leaveApprovedCount').textContent = String(approvedLeaves);
   document.getElementById('leaveRejectedCount').textContent = String(rejectedLeaves);
+
+  // Render announcement summary on overview
+  renderOverviewAnnouncementSummary();
 }
 
 // ============ Gender-based Leave Type Filtering ============

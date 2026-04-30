@@ -255,6 +255,11 @@ body{
 .form{display:grid;gap:16px}
 .auth-card .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 label{font-size:.95rem;font-weight:600}
+.optional-label{
+  color:var(--muted);
+  font-size:.78rem;
+  font-weight:500;
+}
 input,select{
   width:100%;
   border:1px solid var(--line);
@@ -1356,6 +1361,13 @@ th{font-size:.86rem;text-transform:uppercase;letter-spacing:.02em;color:#475569}
 .attendance-tracker.late p,.attendance-tracker.late h4{color:#1d4ed8}
 .attendance-tracker.absent{border-color:#fecaca;background:#fef2f2}
 .attendance-tracker.absent p,.attendance-tracker.absent h4{color:#b91c1c}
+
+/* Attendance Status in Table */
+.attendance-status-present{color:#166534;background:#f0fdf4;padding:4px 8px;border-radius:4px;font-weight:500}
+.attendance-status-late{color:#1d4ed8;background:#eff6ff;padding:4px 8px;border-radius:4px;font-weight:500}
+.attendance-status-absent{color:#b91c1c;background:#fef2f2;padding:4px 8px;border-radius:4px;font-weight:500}
+.attendance-status-unknown{color:#6b7280;background:#f3f4f6;padding:4px 8px;border-radius:4px;font-weight:500}
+
 /* Leave Balance Color Variants */
 .leave-balance-vacation{border-color:#fef08a;background:#fefce8}
 .leave-balance-vacation p,.leave-balance-vacation h4{color:#854d0e}

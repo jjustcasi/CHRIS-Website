@@ -27,6 +27,34 @@
       "gender": "Female",
       "role": "employee",
       "google": false
+    },
+    {
+      "id": 3,
+      "name": "KATRISHA ALONZO YAGUEL N/A",
+      "surname": "YAGUEL",
+      "firstName": "KATRISHA",
+      "middleName": "ALONZO",
+      "suffix": "N/A",
+      "email": "kyaguel@gmail.com",
+      "birthday": "2003-06-08",
+      "password": "$2a$10$XaiJesHKJpYANM65YmufjOfR3GNItqDBSxXmj0bkz3VPjMHZlqFiW",
+      "gender": "Female",
+      "role": "employee",
+      "google": false
+    },
+    {
+      "id": 4,
+      "name": "ANNA AMPARO",
+      "surname": "AMPARO",
+      "firstName": "ANNA",
+      "middleName": "",
+      "suffix": "",
+      "email": "annaamparo@gmail.com",
+      "birthday": "2000-01-01",
+      "password": "$2a$10$2MVwXiQwo0zC9aO.UwP80.s6OHdeLqkAi0tFk01k0BEjTCvgh6M0O",
+      "gender": "Female",
+      "role": "employee",
+      "google": false
     }
   ],
   "userProfiles": [],
@@ -53,6 +81,16 @@
       "employeeEmail": "cdomingo@chris.com",
       "status": "",
       "updatedAt": "2026-04-20T06:18:35.994Z"
+    },
+    {
+      "employeeEmail": "kyaguel@gmail.com",
+      "status": "",
+      "updatedAt": "2026-04-25T15:31:01.345Z"
+    },
+    {
+      "employeeEmail": "annaamparo@gmail.com",
+      "status": "",
+      "updatedAt": "2026-04-30T16:56:44.505Z"
     }
   ],
   "leaveComments": [],

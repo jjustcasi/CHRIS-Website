@@ -254,7 +254,7 @@ function signup() {
   const confirmPassword = document.getElementById('signupConfirmPassword').value;
   const gender = document.getElementById('signupGender').value;
 
-  if (!surname || !firstName || !middleName || !suffix || !email || !birthday || !password || !confirmPassword || !gender) {
+  if (!surname || !firstName || !email || !birthday || !password || !confirmPassword || !gender) {
     showMessage('authMessage', 'Please complete all sign up fields.', false);
     return;
   }
@@ -276,7 +276,7 @@ function signup() {
 
   const localUserPayload = {
     email,
-    name: `${firstName} ${middleName} ${surname}`.trim(),
+    name: [firstName, middleName, surname, suffix].filter(Boolean).join(' '),
     surname,
     firstName,
     middleName,
@@ -380,6 +380,12 @@ function handleCredentialResponse(response) {
     return;
   }
 
+  const termsCheckbox = document.getElementById('agreeTerms');
+  if (termsCheckbox && !termsCheckbox.checked) {
+    showMessage('authMessage', 'Please agree to the Terms and Conditions and Privacy Policy before signing up with Google.', false);
+    return;
+  }
+
   fetch('/api/auth/google', {
     method: 'POST',
     headers: {
@@ -407,4 +413,31 @@ function handleCredentialResponse(response) {
     .catch(() => {
       showMessage('authMessage', 'Unable to reach the authentication server.', false);
     });
+}
+
+function initializeGoogleAuthButton(buttonId) {
+  const buttonContainer = document.getElementById(buttonId);
+  if (!buttonContainer) return;
+
+  if (!window.google) {
+    window.setTimeout(() => initializeGoogleAuthButton(buttonId), 100);
+    return;
+  }
+
+  const clientId = window.APP_CONFIG?.googleClientId || 'YOUR_GOOGLE_CLIENT_ID';
+  if (!clientId || clientId === 'YOUR_GOOGLE_CLIENT_ID') {
+    showMessage('authMessage', 'Google client ID is not configured. Update GOOGLE_CLIENT_ID in .env or config.js.', false);
+    return;
+  }
+
+  google.accounts.id.initialize({
+    client_id: clientId,
+    callback: handleCredentialResponse
+  });
+
+  google.accounts.id.renderButton(buttonContainer, {
+    theme: 'outline',
+    size: 'large',
+    width: '100%'
+  });
 }
