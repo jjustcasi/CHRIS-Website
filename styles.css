@@ -291,6 +291,23 @@ input:focus,select:focus,textarea:focus{outline:2px solid #99f6e4;border-color:#
   gap:12px;
   margin-top:18px;
 }
+.auth-switch-link{
+  margin-top:18px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:6px;
+  color:var(--muted);
+  font-size:.94rem;
+}
+.auth-switch-link a{
+  color:var(--brand);
+  font-weight:700;
+  text-decoration:none;
+}
+.auth-switch-link a:hover{
+  text-decoration:underline;
+}
 .consent-row{
   display:flex;
   align-items:flex-start;
